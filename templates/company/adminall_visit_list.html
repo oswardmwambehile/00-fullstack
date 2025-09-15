@@ -1,0 +1,187 @@
+{% extends "company/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+  {% include "company/sidebar.html" %}
+  <div class="main-panel">
+    <div class="main-header">
+      {% include "company/nav.html" %}
+    </div>
+
+    <div class="container">
+      <div class="page-inner">
+        <div class="container mt-4">
+          <h3 class="mb-3">
+            <i class="fas fa-clipboard-list text-primary me-2"></i> All New Visits
+          </h3>
+
+          <!-- Filter Form -->
+          <form method="get" class="row g-3 mb-4 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label">Created Date</label>
+              <input type="date" name="created_date" class="form-control" value="{{ created_date }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Status</label>
+              <select name="status" class="form-select">
+                <option value="">All</option>
+                {% for s in status_choices %}
+                  <option value="{{ s }}" {% if status == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Meeting Stage</label>
+              <select name="meeting_stage" class="form-select">
+                <option value="">All</option>
+                {% for stage in meeting_stages %}
+                  <option value="{{ stage }}" {% if meeting_stage == stage %}selected{% endif %}>{{ stage }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Tag</label>
+              <select name="tag" class="form-select">
+                <option value="">All</option>
+                {% for t in tags %}
+                  <option value="{{ t }}" {% if tag == t %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-12 d-flex flex-wrap gap-2">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-filter me-1"></i> Filter
+              </button>
+              <a href="{% url 'all_visit_lists' %}" class="btn btn-secondary">
+                <i class="fas fa-undo me-1"></i> Reset
+              </a>
+             
+            </div>
+          </form>
+
+          <!-- Visits Table -->
+          {% if visits %}
+            <div class="table-responsive">
+              <table class="table table-bordered table-striped align-middle w-100 custom-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Company Name</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Tag</th>
+                    <th>Meeting Stage</th>
+                    <th>Created At</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for v in visits %}
+                  <tr>
+                    <td>{{ forloop.counter0|add:visits.start_index }}</td>
+                    <td>{{ v.company_name.company_name }}</td>
+                    <td>
+                      {% if v.latitude and v.longitude %}
+                        <i class="fas fa-map-marker-alt text-danger me-1"></i>
+                        {{ v.place_name }}<br>
+                        <small>{{ v.region }} {{ v.zone }} {{ v.nation }}</small><br>
+                        <a href="https://www.google.com/maps/search/?api=1&query={{ v.latitude }},{{ v.longitude }}" 
+                           target="_blank" class="ms-1 text-decoration-none">
+                          <i class="fas fa-map-location-dot me-1"></i> View on Map
+                        </a>
+                      {% else %}
+                        <span class="text-muted">Not Available</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <span class="badge 
+                        {% if v.status == 'Open' %}bg-info
+                        {% elif v.status == 'Won Paid' %}bg-success
+                        {% elif v.status == 'Won Pending Payment' %}bg-warning text-dark
+                        {% elif v.status == 'Lost' %}bg-danger
+                        {% else %}bg-light text-dark{% endif %}">
+                        {{ v.status }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="badge 
+                        {% if v.tag == 'Prospect' %}bg-warning text-dark
+                        {% elif v.tag == 'Lead' %}bg-primary
+                        {% elif v.tag == 'Customer' %}bg-success
+                        {% else %}bg-light text-dark{% endif %}">
+                        {{ v.tag }}
+                      </span>
+                    </td>
+                    <td>
+  <span class="badge 
+    {% if v.meeting_stage == 'Prospecting' %}bg-secondary
+    {% elif v.meeting_stage == 'Qualifying' %}bg-info
+    {% elif v.meeting_stage == 'Proposal or Negotiation' %}bg-warning text-dark
+    {% elif v.meeting_stage == 'Closing' %}bg-success
+    {% elif v.meeting_stage == 'Payment Followup' %}bg-primary
+    {% else %}bg-light text-dark{% endif %}">
+    {{ v.meeting_stage }}
+  </span>
+</td>
+                    <td>{{ v.created_at|date:"Y-m-d H:i" }}</td>
+                    <td class="text-nowrap">
+                      <a href="{% url 'visit_details' v.id %}" class="btn btn-sm btn-primary me-1 mb-1">
+                        <i class="fas fa-eye"></i> View Details
+                      </a>
+                      
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="8" class="text-center text-muted">No visits found.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            <nav aria-label="Page navigation">
+              <ul class="pagination justify-content-center">
+                {% for p in visits.paginator.page_range %}
+                  {% if p == visits.number %}
+                    <li class="page-item active">
+                      <span class="page-link">{{ p }}</span>
+                    </li>
+                  {% else %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ p }}
+                        {% if created_date %}&created_date={{ created_date }}{% endif %}
+                        {% if status %}&status={{ status }}{% endif %}
+                        {% if meeting_stage %}&meeting_stage={{ meeting_stage }}{% endif %}
+                        {% if tag %}&tag={{ tag }}{% endif %}
+                      ">{{ p }}</a>
+                    </li>
+                  {% endif %}
+                {% endfor %}
+              </ul>
+            </nav>
+
+          {% else %}
+            <p class="text-muted">No visits found.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Styling -->
+  <style>
+    .custom-table td, .custom-table th { white-space: nowrap; vertical-align: middle; padding: 8px 12px; }
+    .custom-table thead th { background: none !important; font-weight: 600; border-bottom: 2px solid #ccc; }
+    .badge { font-size: 0.85rem; }
+    @media (max-width: 768px){
+      .table-responsive { overflow-x: auto; }
+      .custom-table td, .custom-table th { font-size: 0.875rem; }
+    }
+  </style>
+
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+{% endblock %}

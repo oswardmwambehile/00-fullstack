@@ -1,0 +1,162 @@
+{% extends "users/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+{% include "users/sidebar.html" %}
+
+<div class="main-panel">
+  <div class="main-header">
+    {% include "users/nav.html" %}
+  </div>
+
+  <div class="container">
+    <div class="page-inner">
+      <h3 class="mb-4">
+        <i class="fas fa-info-circle text-primary me-2"></i> Visit Details
+      </h3>
+
+      <!-- Company & Meeting Info -->
+      <div class="row mb-4">
+        <div class="col-md-6 col-sm-12">
+          <h5><i class="fas fa-building me-1 text-secondary"></i> Company & Contact</h5>
+          <p><strong>Company Name:</strong> {{ visit.company_name }}</p>
+          <p><strong>Contact Person:</strong> {{ visit.contact_person }}</p>
+          <p><strong>Contact Number:</strong> {{ visit.contact_number }}</p>
+          <p><strong>Designation:</strong> {{ visit.designation }}</p>
+        </div>
+        <div class="col-md-6 col-sm-12">
+          <h5><i class="fas fa-briefcase me-1 text-secondary"></i> Meeting Info</h5>
+          <p><strong>Meeting Stage:</strong> {{ visit.meeting_stage }}</p>
+          <p>
+            <strong>Status:</strong> 
+            <span class="badge 
+              {% if visit.status == 'Open' %}bg-primary
+              {% elif visit.status == 'Won Paid' %}bg-success
+              {% elif visit.status == 'Won Pending Payment' %}bg-warning text-dark
+              {% elif visit.status == 'Lost' %}bg-danger
+              {% else %}bg-light text-dark{% endif %}">
+              <i class="fas fa-circle me-1"></i> {{ visit.status }}
+            </span>
+          </p>
+          <p>
+            <strong>Tag:</strong>
+            <span class="badge 
+              {% if visit.tag == 'Prospect' %}bg-warning text-dark
+              {% elif visit.tag == 'Lead' %}bg-primary
+              {% elif visit.tag == 'Customer' %}bg-success
+              {% else %}bg-light text-dark{% endif %}">
+              <i class="fas fa-tag me-1"></i> {{ visit.tag }}
+            </span>
+          </p>
+          <p><strong>Created At:</strong> {{ visit.created_at|date:"Y-m-d H:i" }}</p>
+        </div>
+      </div>
+
+      <!-- Location -->
+      <div class="mb-4">
+        <h5><i class="fas fa-map-marker-alt me-1 text-danger"></i> Location</h5>
+        {% if visit.latitude and visit.longitude %}
+          <p>{{ visit.place_name }} <br>
+             <small>{{ visit.region }} {{ visit.zone }} {{ visit.nation }}</small></p>
+          <a href="https://www.google.com/maps/search/?api=1&query={{ visit.latitude }},{{ visit.longitude }}" 
+             target="_blank" class="btn btn-sm btn-primary">
+            <i class="fas fa-map-location-dot me-1"></i> View on Map
+          </a>
+        {% else %}
+          <p class="text-muted">Location Not Available</p>
+        {% endif %}
+      </div>
+
+      <!-- Products Interested Table -->
+      <div class="mb-4">
+        <h5><i class="fas fa-industry me-1 text-info"></i> Products Interested</h5>
+        {% if products_interested %}
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped align-middle">
+            <thead>
+              <tr>
+                <th>Created At</th>
+                <th>Product</th>
+                <th>Order Estimate</th>
+                <th>Final Order Amount</th>
+                <th>Payment Collected</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for product in products_interested %}
+              <tr>
+                <td>{{ product.visit.created_at|date:"Y-m-d H:i" }}</td>
+                <td>{{ product.get_product_interested_display }}</td>
+                <td>{{ product.order_estimate|default:"-"|intcomma }}</td>
+                <td>{{ product.final_order_amount|default:"-"|intcomma }}</td>
+                <td>
+                  {% if product.payment_collected %}
+                    <span class="badge bg-success">Yes ({{ product.payment_collected|floatformat:2|intcomma }})</span>
+                  {% else %}
+                    <span class="badge bg-secondary">No</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+              <tr>
+                <th colspan="3" class="text-end">Totals:</th>
+                <th>{{ total_final_order|floatformat:2|intcomma }}</th>
+                <th>{{ total_payment_collected|floatformat:2|intcomma }}</th>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+          <p class="text-muted">No products interested added.</p>
+        {% endif %}
+      </div>
+
+      <!-- Client Budget & Discussion -->
+      <div class="mb-4">
+        <h5><i class="fas fa-money-bill-wave me-1 text-success"></i> Client Budget & Discussion</h5>
+        <p><strong>Budget:</strong> {{ visit.client_budget|default:"0"|floatformat:2|intcomma }}</p>
+        <p><strong>Item Discussed:</strong> {{ visit.item_discussed }}</p>
+      </div>
+
+      <!-- Contract Info -->
+      <div class="mb-4">
+        <h5><i class="fas fa-file-contract me-1 text-primary"></i> Contract Info</h5>
+        <p><strong>Outcome:</strong> {{ visit.contract_outcome|default:"-" }}</p>
+        <p><strong>Contract Amount:</strong> {{ visit.contract_amount|default:"0"|floatformat:2|intcomma }}</p>
+        <p><strong>Reason Lost:</strong> {{ visit.reason_lost|default:"-" }}</p>
+        <p><strong>Overall Payment Collected:</strong> 
+          {% if visit.is_payment_collected %}
+            <span class="badge bg-success">Yes</span>
+          {% else %}
+            <span class="badge bg-secondary">No</span>
+          {% endif %}
+        </p>
+      </div>
+
+      <a href="{% url 'all_visit_list' %}" class="btn btn-secondary mb-4">
+        <i class="fas fa-arrow-left me-1"></i> Back to Visits
+      </a>
+    </div>
+  </div>
+</div>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<style>
+  
+  .badge {
+    font-size: 0.9rem;
+    padding: 0.4em 0.6em;
+    border-radius: 0.35rem;
+  }
+  table th, table td {
+    vertical-align: middle !important;
+  }
+  @media (max-width: 768px) {
+    h5 { font-size: 1rem; }
+    table th, table td { font-size: 0.85rem; }
+    .btn { font-size: 0.85rem; padding: 0.35rem 0.5rem; }
+  }
+</style>
+{% endblock %}

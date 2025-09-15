@@ -1,0 +1,212 @@
+{% extends "company/base.html" %}
+{% load static %}
+
+{% block content %}
+  {% include "company/sidebar.html" %}
+  <div class="main-panel">
+    <div class="main-header">
+      {% include "company/nav.html" %}
+    </div>
+
+    <div class="container">
+      <div class="page-inner py-4">
+        <div class="row g-4 align-items-center justify-content-center">
+
+          <!-- Left: Image -->
+          <div class="col-lg-6 text-center">
+            <img src="{% static 'auth/img/register.svg' %}" alt="Register Image" class="img-fluid rounded">
+          </div>
+
+          <!-- Right: Form -->
+          <div class="col-lg-6">
+           <h2 class="mb-4 text-center fw-bold">
+  <i class="fas fa-user-plus me-2 text-primary"></i> Add New User to a Company
+</h2>
+
+            <!-- Messages -->
+            {% if messages %}
+              {% for message in messages %}
+                <div class="alert 
+                  {% if message.tags == 'success' %} alert-success
+                  {% elif message.tags == 'error' or message.tags == 'danger' %} alert-danger
+                  {% elif message.tags == 'warning' %} alert-warning
+                  {% else %} alert-info {% endif %} alert-dismissible fade show" role="alert">
+                  {{ message }}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              {% endfor %}
+            {% endif %}
+
+            <!-- Form -->
+            <form method="post" id="registerForm">
+              {% csrf_token %}
+
+              <!-- First & Last Name -->
+              <div class="row mb-3">
+                <div class="col input-group">
+                  <span class="input-group-text bg-white border-0"><i class="fa-solid fa-user"></i></span>
+                  <input type="text" name="first_name" class="form-control custom-input" placeholder="First Name" required>
+                </div>
+                <div class="col input-group mt-2 mt-lg-0">
+                  <span class="input-group-text bg-white border-0"><i class="fa-solid fa-user"></i></span>
+                  <input type="text" name="last_name" class="form-control custom-input" placeholder="Last Name" required>
+                </div>
+              </div>
+
+              <!-- Email -->
+              <div class="mb-3 input-group">
+                <span class="input-group-text bg-white border-0"><i class="fa-solid fa-envelope"></i></span>
+                <input type="email" name="email" class="form-control custom-input" placeholder="Email Address" required>
+              </div>
+
+              <!-- Company Name -->
+              <div class="mb-3 input-group">
+                <span class="input-group-text bg-white border-0"><i class="fa-solid fa-building"></i></span>
+                <select name="company_name" class="form-select custom-input" required>
+                  <option value="">Select Company</option>
+                  <option value="ANDO">ANDO</option>
+                  <option value="KAM">KAM</option>
+                  <option value="MATE">MATE</option>
+                </select>
+              </div>
+
+              <!-- Position & Zone -->
+              <div class="row mb-3">
+                <div class="col input-group">
+                  <span class="input-group-text bg-white border-0"><i class="fa-solid fa-briefcase"></i></span>
+                  <select name="position" class="form-select custom-input" required>
+                    <option value="">Select Position</option>
+                    <option value="Head of Sales">Head of Sales</option>
+                    <option value="Facilitator">Facilitator</option>
+                    <option value="Product Brand Manager">Product Brand Manager</option>
+                    <option value="Corporate Manager">Corporate Manager</option>
+                    <option value="Corporate Officer">Corporate Officer</option>
+                    <option value="Zonal Sales Executive">Zonal Sales Executive</option>
+                    <option value="Mobile Sales Officer">Mobile Sales Officer</option>
+                    <option value="Desk Sales Officer">Desk Sales Officer</option>
+                  </select>
+                </div>
+                <div class="col input-group mt-2 mt-lg-0">
+                  <span class="input-group-text bg-white border-0"><i class="fa-solid fa-map-marker-alt"></i></span>
+                  <select name="zone" class="form-select custom-input" required>
+                    <option value="">Select Zone</option>
+                    <option value="Coast Zone">Coast Zone</option>
+                    <option value="Corporate">Corporate</option>
+                    <option value="Central Zone">Central Zone</option>
+                    <option value="Southern Zone">Southern Zone</option>
+                    <option value="Northern Zone">Northern Zone</option>
+                    <option value="Lake Zone">Lake Zone</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Branch -->
+              <div class="mb-3 input-group">
+                <span class="input-group-text bg-white border-0"><i class="fa-solid fa-code-branch"></i></span>
+                <select name="branch" class="form-select custom-input" required>
+                  <option value="">Select Branch</option>
+                  <option value="Chanika">Chanika</option>
+                  <option value="Mikocheni">Mikocheni</option>
+                  <option value="Morogoro">Morogoro</option>
+                  <option value="Zanzibar">Zanzibar</option>
+                  <option value="ANDO HQ">ANDO HQ</option>
+                  <option value="Dodoma">Dodoma</option>
+                  <option value="Singida">Singida</option>
+                  <option value="Tabora">Tabora</option>
+                  <option value="Mbeya">Mbeya</option>
+                  <option value="Tunduma">Tunduma</option>
+                  <option value="Arusha">Arusha</option>
+                  <option value="Moshi">Moshi</option>
+                  <option value="Mwanza">Mwanza</option>
+                  <option value="Geita">Geita</option>
+                </select>
+              </div>
+
+              <!-- Contact -->
+              <div class="mb-3 input-group">
+                <span class="input-group-text bg-white border-0"><i class="fa-solid fa-phone"></i></span>
+                <input type="text" name="contact" class="form-control custom-input" placeholder="Phone or Contact Info" required>
+              </div>
+
+              <!-- Password & Confirm -->
+              <div class="row mb-3">
+                <div class="col input-group">
+                  <span class="input-group-text bg-white border-0"><i class="fa-solid fa-lock"></i></span>
+                  <input type="password" name="password" class="form-control custom-input" placeholder="Password" required>
+                </div>
+                <div class="col input-group mt-2 mt-lg-0">
+                  <span class="input-group-text bg-white border-0"><i class="fa-solid fa-lock"></i></span>
+                  <input type="password" name="password1" class="form-control custom-input" placeholder="Confirm Password" required>
+                </div>
+              </div>
+
+              <!-- Terms -->
+              <div class="form-check mb-4">
+                <input class="form-check-input" type="checkbox" id="terms" required>
+                <label class="form-check-label" for="terms">
+                  I agree to the <a href="#" class="link-primary">Terms and Conditions</a>
+                </label>
+              </div>
+
+              <!-- Submit -->
+              <div class="d-grid">
+                <button type="submit" id="registerBtn" class="btn btn-primary btn-lg d-flex justify-content-center align-items-center gap-2">
+                  <i class="fa-solid fa-user-plus"></i>
+                  <span id="registerBtnText">Add user to a Company</span>
+                  <div id="registerBtnSpinner" class="spinner-border spinner-border-sm text-light d-none" role="status" aria-hidden="true"></div>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spinner script -->
+  <script>
+    document.getElementById("registerForm").addEventListener("submit", function () {
+      const btn = document.getElementById("registerBtn");
+      const text = document.getElementById("registerBtnText");
+      const spinner = document.getElementById("registerBtnSpinner");
+
+      text.textContent = "Adding user to a Company...";
+      spinner.classList.remove("d-none");
+      btn.disabled = true;
+    });
+  </script>
+
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <style>
+  .custom-input {
+    background-color: transparent !important;
+    border: 2px solid #ccc !important;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+    padding: 10px 12px !important;
+    width: 100%; /* ensure inputs take full width in their column */
+  }
+
+  .custom-input:focus {
+    border-color: #0d6efd !important;
+    outline: none !important;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,.15) !important;
+    background-color: transparent !important;
+  }
+
+  /* Responsive fix for small screens */
+  @media (max-width: 576px) {
+    .row .col {
+      flex: 0 0 100% !important;
+      max-width: 100% !important;
+    }
+    .custom-input {
+      width: 100% !important;
+    }
+  }
+</style>
+
+{% endblock %}

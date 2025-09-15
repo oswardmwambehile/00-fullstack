@@ -1,0 +1,97 @@
+{% load static %}
+
+<div class="sidebar" data-background-color="dark">
+  <div class="sidebar-logo">
+    <!-- Logo Header -->
+    <div class="logo-header" data-background-color="dark">
+      <a href="" class="logo">
+        <img src="{% static 'assets/img/ando.svg' %}" alt="navbar brand" class="navbar-brand" height="20" />
+      </a>
+      <div class="nav-toggle">
+        <button class="btn btn-toggle toggle-sidebar">
+          <i class="fas fa-angle-double-right"></i>
+        </button>
+        <button class="btn btn-toggle sidenav-toggler">
+          <i class="fas fa-angle-double-left"></i>
+        </button>
+      </div>
+      <button class="topbar-toggler more">
+        <i class="fas fa-ellipsis-v"></i>
+      </button>
+    </div>
+    <!-- End Logo Header -->
+  </div>
+
+  <div class="sidebar-wrapper scrollbar scrollbar-inner">
+    <div class="sidebar-content">
+      <ul class="nav nav-secondary">
+
+        <!-- Dashboard -->
+        <li class="nav-item active">
+          <a data-bs-toggle="collapse" href="#dashboard" class="collapsed" aria-expanded="false">
+            <i class="fas fa-tachometer-alt"></i>
+            <p>Dashboard</p>
+            <span class="caret"></span>
+          </a>
+          <div class="collapse" id="dashboard">
+            <ul class="nav nav-collapse">
+              <li><a href=""><span class="sub-item">Dashboard</span></a></li>
+            </ul>
+          </div>
+        </li>
+
+        <!-- Section -->
+        <li class="nav-section">
+          <span class="sidebar-mini-icon"><i class="fas fa-ellipsis-h"></i></span>
+          <h4 class="text-section">Components</h4>
+        </li>
+
+         <li class="nav-item">
+  <a href="{% url 'add_visit' %}" class="flex items-center gap-2 text-gray-700 hover:text-blue-600">
+    <i class="fas fa-home text-base"></i>
+    <span>Home</span>
+  </a>
+</li>
+
+
+        <!-- Profile -->
+        <li class="nav-item">
+          <a data-bs-toggle="collapse" href="#profile">
+            <i class="fas fa-user-cog"></i>
+            <p>Manage Accounts</p>
+            <span class="caret"></span>
+          </a>
+          <div class="collapse" id="profile">
+            <ul class="nav nav-collapse">
+              <li><a href="{% url 'profile' %}"><span class="sub-item"><i class="fas fa-id-badge"></i> View Profile</span></a></li>
+              <li><a href="{% url 'change_password' %}"><span class="sub-item"><i class="fas fa-key"></i> Change Password</span></a></li>
+              <li><a href="{% url 'logout' %}"><span class="sub-item"><i class="fas fa-sign-out-alt"></i> Logout</span></a></li>
+            </ul>
+          </div>
+        </li>
+
+        <!-- All New Visits List -->
+        <li class="nav-item">
+          <a href="{%url 'all_visit_list'%}">
+            <i class="fas fa-calendar-check"></i>
+            <p>All New Visits List</p>
+          </a>
+        </li>
+
+       
+
+        <!-- Customer Directory -->
+        <li class="nav-item">
+          <a href="{% url 'customer_list' %}">
+            <i class="fas fa-address-book"></i>
+            <p>Customer Directory</p>
+          </a>
+        </li>
+
+       
+
+
+      </ul>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,122 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Login</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body class="min-h-screen flex items-center justify-center">
+
+  <!-- Main container -->
+  <div class="w-full max-w-5xl mx-3 sm:mx-6 lg:mx-8 shadow-lg rounded-xl border">
+
+    <div class="flex flex-col lg:flex-row items-center justify-center">
+
+      <!-- Left side: Image (always visible, responsive) -->
+      <div class="w-full lg:w-1/2 flex justify-center items-center p-6">
+        <img class="rounded-lg w-full max-w-sm md:max-w-md" 
+             src="{% static 'auth/img/login.svg' %}" 
+             alt="Login Image">
+      </div>
+
+      <!-- Right side: Form -->
+      <div class="w-full lg:w-1/2 p-6 sm:p-8 lg:p-12 space-y-6">
+        <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 text-center">
+          <i class="fas fa-right-to-bracket mr-2 text-green-600"></i>Sign in to Platform
+        </h2>
+
+        <!-- Messages -->
+        {% if messages %}
+          <div class="space-y-3">
+            {% for message in messages %}
+              <div class="p-4 rounded-lg text-sm font-medium flex items-center gap-2
+                          {% if message.tags == 'success' %} bg-green-100 text-green-700
+                          {% elif message.tags == 'error' or message.tags == 'danger' %} bg-red-100 text-red-700
+                          {% elif message.tags == 'warning' %} bg-yellow-100 text-yellow-700
+                          {% else %} bg-blue-100 text-blue-700 {% endif %}">
+
+                {% if message.tags == 'success' %} <i class="fas fa-check-circle"></i>
+                {% elif message.tags == 'error' or message.tags == 'danger' %} <i class="fas fa-times-circle"></i>
+                {% elif message.tags == 'warning' %} <i class="fas fa-exclamation-triangle"></i>
+                {% else %} <i class="fas fa-info-circle"></i> {% endif %}
+                <span>{{ message }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <!-- Login form -->
+        <form method="post" id="loginForm" class="space-y-6">
+          {% csrf_token %}
+          
+          <!-- Email -->
+          <div>
+            <label for="email" class="text-sm font-medium text-gray-900 block mb-2">
+              <i class="fas fa-envelope mr-1 text-gray-500"></i>Email Address
+            </label>
+            <input type="email" name="email" id="email"
+              class="border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+              placeholder="Enter your email address" required>
+          </div>
+
+          <!-- Password -->
+          <div>
+            <label for="password" class="text-sm font-medium text-gray-900 block mb-2">
+              <i class="fas fa-lock mr-1 text-gray-500"></i>Password
+            </label>
+            <input type="password" name="password" id="password"
+              class="border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+              placeholder="Enter your password" required>
+          </div>
+
+          <!-- Forgot Password -->
+          <div class="flex justify-center text-sm font-medium text-gray-500 mt-4">
+            <a href="" class="text-blue-700 hover:underline">
+              <i class="fas fa-key mr-1"></i>Forgot your password?
+            </a>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="mt-6">
+            <button type="submit" id="loginBtn"
+              class="flex items-center justify-center gap-2 text-white bg-green-600 hover:bg-green-700 
+                     focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-base px-5 py-3 w-full">
+              <i class="fas fa-sign-in-alt"></i>
+              <span id="loginBtnText">Login to your account</span>
+              <svg id="loginBtnSpinner" aria-hidden="true" role="status" 
+                   class="hidden w-5 h-5 animate-spin text-white" 
+                   viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M100 50.5908C100 78.2051..." fill="currentColor"/>
+              </svg>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flowbite JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
+
+  <!-- Button Loading -->
+  <script>
+    document.getElementById("loginForm").addEventListener("submit", function() {
+      const btn = document.getElementById("loginBtn");
+      const text = document.getElementById("loginBtnText");
+      const spinner = document.getElementById("loginBtnSpinner");
+      text.textContent = "Signing in...";
+      spinner.classList.remove("hidden");
+      btn.disabled = true;
+    });
+  </script>
+</body>
+</html>

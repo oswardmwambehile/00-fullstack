@@ -1,0 +1,138 @@
+{% extends "manager/base.html" %}
+{% load static %}
+
+{% block content %}
+  {% include "manager/sidebar.html" %}
+  <div class="main-panel">
+    <div class="main-header">
+      {% include "manager/nav.html" %}
+    </div>
+
+    <div class="container">
+      <div class="page-inner">
+
+        <!-- ✅ Home Link -->
+        <div class="mb-3">
+          <a href="{% url 'customer_list' %}" class="btn btn-outline-primary btn-sm">
+            ⬅ Back to Customers
+          </a>
+        </div>
+
+        <h3 class="mb-4">Edit Customer</h3>
+
+        <form method="post">
+          {% csrf_token %}
+
+          <!-- Customer Form -->
+          <div class="mb-4">
+            <h5>Customer Details</h5>
+            <table class="table table-bordered">
+              <tbody>
+                <tr>
+                  <th>Designation</th>
+                  <td>{{ customer_form.designation }}</td>
+                </tr>
+                <tr>
+                  <th>Company Name</th>
+                  <td>{{ customer_form.company_name }}</td>
+                </tr>
+                <tr>
+                  <th>Location</th>
+                  <td>{{ customer_form.location }}</td>
+                </tr>
+                <tr>
+                  <th>Email</th>
+                  <td>{{ customer_form.email }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Contact Formset -->
+          <div class="mb-4">
+            <h5>Contact Details</h5>
+            {{ formset.management_form }}
+
+            <table class="table table-bordered" id="contact-table">
+              <thead>
+                <tr>
+                  <th style="width:40%;">Contact Name</th>
+                  <th style="width:40%;">Contact Detail</th>
+                  <th style="width:20%;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for form in formset %}
+                  <tr>
+                    <td>{{ form.contact_name }}</td>
+                    <td>{{ form.contact_detail }}</td>
+                    <td>
+                      <button type="button" class="btn btn-danger btn-sm remove-row">✖</button>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+
+            <button type="button" id="add-contact" class="btn btn-success btn-sm me-2">
+              ➕ Add Contact
+            </button>
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" class="btn btn-primary">💾 Update Customer</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .mb-4 { background: none !important; border: none !important; }
+    .table { background: transparent !important; }
+    .table th, .table td { background: transparent !important; vertical-align: middle; }
+    input, select, textarea {
+      background: transparent !important;
+      border: 1px solid #ccc !important;
+      border-radius: 4px !important;
+      padding: 6px 8px !important;
+      width: 100% !important;
+    }
+    @media (max-width: 768px) {
+      .table th, .table td { display: block; width: 100% !important; }
+      .table tr { display: block; margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+      .table th { font-weight: bold; margin-bottom: 5px; }
+      #contact-table thead { display: none; }
+    }
+  </style>
+
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const addBtn = document.getElementById("add-contact");
+    const tableBody = document.querySelector("#contact-table tbody");
+    const totalForms = document.getElementById("id_form-TOTAL_FORMS");
+
+    addBtn.addEventListener("click", function () {
+      const formCount = parseInt(totalForms.value);
+      const newRow = tableBody.rows[0].cloneNode(true);
+
+      newRow.querySelectorAll("input").forEach(input => {
+        input.name = input.name.replace(/-\d+-/, `-${formCount}-`);
+        input.id = input.id.replace(/-\d+-/, `-${formCount}-`);
+        if (input.type === "text") input.value = "";
+      });
+
+      tableBody.appendChild(newRow);
+      totalForms.value = formCount + 1;
+    });
+
+    document.addEventListener("click", function (e) {
+      if (e.target.classList.contains("remove-row")) {
+        const row = e.target.closest("tr");
+        if (tableBody.rows.length > 1) {
+          row.remove();
+        }
+      }
+    });
+  });
+  </script>
+{% endblock %}

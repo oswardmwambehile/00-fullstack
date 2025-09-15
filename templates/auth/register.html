@@ -1,0 +1,175 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Register</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
+</head>
+<body class="min-h-screen flex items-center justify-center">
+
+  <!-- Main container -->
+  <div class="w-full max-w-6xl mx-3 sm:mx-6 lg:mx-8 shadow-lg rounded-xl border">
+
+    <div class="flex flex-col lg:flex-row items-center justify-center">
+
+      <!-- Left side: Image -->
+      <div class="w-full lg:w-1/2 flex justify-center items-center p-6">
+        <img class="rounded-lg w-full max-w-sm md:max-w-md"
+             src="{% static 'auth/img/register.svg' %}"
+             alt="Register Image">
+      </div>
+
+      <!-- Right side: Form -->
+      <div class="w-full lg:w-1/2 p-6 sm:p-8 lg:p-12 space-y-6">
+        <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 text-center">Create an Account</h2>
+
+        <!-- Messages -->
+        {% if messages %}
+          <div class="space-y-3">
+            {% for message in messages %}
+              <div class="p-4 rounded-lg text-sm font-medium flex items-center gap-2
+                          {% if message.tags == 'success' %} bg-green-100 text-green-700
+                          {% elif message.tags == 'error' or message.tags == 'danger' %} bg-red-100 text-red-700
+                          {% elif message.tags == 'warning' %} bg-yellow-100 text-yellow-700
+                          {% else %} bg-blue-100 text-blue-700 {% endif %}">
+                {% if message.tags == 'success' %} ✅
+                {% elif message.tags == 'error' or message.tags == 'danger' %} ❌
+                {% elif message.tags == 'warning' %} ⚠️
+                {% else %} ℹ️ {% endif %}
+                <span>{{ message }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <!-- Register form -->
+        <form method="post" id="registerForm" class="space-y-6">
+          {% csrf_token %}
+
+          <!-- Row: First & Last Name -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input type="text" name="first_name" placeholder="First Name" required
+              class="border border-gray-300 rounded-lg w-full p-2.5 focus:ring-blue-500 focus:border-blue-500">
+            <input type="text" name="last_name" placeholder="Last Name" required
+              class="border border-gray-300 rounded-lg w-full p-2.5 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+
+          <!-- Email -->
+          <input type="email" name="email" placeholder="Email Address" required
+            class="border border-gray-300 rounded-lg w-full p-2.5 focus:ring-blue-500 focus:border-blue-500">
+
+          <!-- Row: Position & Zone -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <select name="position" required
+              class="border border-gray-300 rounded-lg w-full p-2.5 focus:ring-blue-500 focus:border-blue-500">
+              <option value="">Select Position</option>
+              <option value="Head of Sales">Head of Sales</option>
+              <option value="Facilitator">Facilitator</option>
+              <option value="Product Brand Manager">Product Brand Manager</option>
+              <option value="Corporate Manager">Corporate Manager</option>
+              <option value="Corporate Officer">Corporate Officer</option>
+              <option value="Zonal Sales Executive">Zonal Sales Executive</option>
+              <option value="Mobile Sales Officer">Mobile Sales Officer</option>
+              <option value="Desk Sales Officer">Desk Sales Officer</option>
+            </select>
+
+            <select name="zone" required
+              class="border border-gray-300 rounded-lg w-full p-2.5 focus:ring-blue-500 focus:border-blue-500">
+              <option value="">Select Zone</option>
+              <option value="Coast Zone">Coast Zone</option>
+              <option value="Corporate">Corporate</option>
+              <option value="Central Zone">Central Zone</option>
+              <option value="Southern Zone">Southern Zone</option>
+              <option value="Northern Zone">Northern Zone</option>
+              <option value="Lake Zone">Lake Zone</option>
+            </select>
+          </div>
+
+          <!-- Branch -->
+          <select name="branch" required
+            class="border border-gray-300 rounded-lg w-full p-2.5 focus:ring-blue-500 focus:border-blue-500">
+            <option value="">Select Branch</option>
+            <option value="Chanika">Chanika</option>
+            <option value="Mikocheni">Mikocheni</option>
+            <option value="Morogoro">Morogoro</option>
+            <option value="Zanzibar">Zanzibar</option>
+            <option value="ANDO HQ">ANDO HQ</option>
+            <option value="Dodoma">Dodoma</option>
+            <option value="Singida">Singida</option>
+            <option value="Tabora">Tabora</option>
+            <option value="Mbeya">Mbeya</option>
+            <option value="Tunduma">Tunduma</option>
+            <option value="Arusha">Arusha</option>
+            <option value="Moshi">Moshi</option>
+            <option value="Mwanza">Mwanza</option>
+            <option value="Geita">Geita</option>
+          </select>
+
+          <!-- Contact -->
+          <input type="text" name="contact" placeholder="Phone or Contact Info" required
+            class="border border-gray-300 rounded-lg w-full p-2.5 focus:ring-blue-500 focus:border-blue-500">
+
+          <!-- Row: Password & Confirm -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input type="password" name="password" placeholder="Password" required
+              class="border border-gray-300 rounded-lg w-full p-2.5 focus:ring-blue-500 focus:border-blue-500">
+            <input type="password" name="password1" placeholder="Confirm Password" required
+              class="border border-gray-300 rounded-lg w-full p-2.5 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+
+          <!-- Terms -->
+          <div class="flex items-center">
+            <input type="checkbox" id="terms" required
+              class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+            <label for="terms" class="ml-2 text-sm text-gray-600">
+              I agree to the <a href="#" class="text-blue-600 hover:underline">Terms and Conditions</a>
+            </label>
+          </div>
+
+          <!-- Submit -->
+          <div class="mt-6">
+            <button type="submit" id="registerBtn"
+              class="flex items-center justify-center gap-2 w-full text-white bg-green-600 hover:bg-green-700 
+                     focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-base px-5 py-3">
+              <span id="registerBtnText">Sign up</span>
+              <svg id="registerBtnSpinner" aria-hidden="true" role="status" 
+                   class="hidden w-5 h-5 animate-spin text-white" 
+                   viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M100 50.5908C100 78.2051..." fill="currentColor"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Login Link -->
+          <div class="flex justify-center text-sm font-medium text-gray-500 mt-4">
+            Already have an account?
+            <a href="{% url 'login' %}" class="ml-1 text-blue-700 hover:underline">Sign in</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flowbite JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
+
+  <!-- Button Loading Script -->
+  <script>
+    document.getElementById("registerForm").addEventListener("submit", function() {
+      const btn = document.getElementById("registerBtn");
+      const text = document.getElementById("registerBtnText");
+      const spinner = document.getElementById("registerBtnSpinner");
+
+      text.textContent = "Creating account...";
+      spinner.classList.remove("hidden");
+      btn.disabled = true;
+    });
+  </script>
+</body>
+</html>

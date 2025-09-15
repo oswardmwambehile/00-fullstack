@@ -1,0 +1,159 @@
+{% extends "company/base.html" %}
+{% load static %}
+
+{% block content %}
+  {% include "company/sidebar.html" %}
+  <div class="main-panel">
+    <div class="main-header">
+      {% include "company/nav.html" %}
+    </div>
+
+    <div class="container">
+      <div class="page-inner">
+
+        <!-- Back Link -->
+        <div class="mb-3">
+          <a href="{% url 'user_list' %}" class="btn btn-outline-primary btn-sm">
+            ⬅ Back to Users
+          </a>
+        </div>
+
+        <h3 class="mb-4">Edit User Information</h3>
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        <form method="post" id="editUserForm">
+          {% csrf_token %}
+
+          <table class="table table-bordered mb-4">
+            <tbody>
+              <tr>
+                <th style="width: 25%;">First Name</th>
+                <td><input type="text" name="first_name" class="form-control" value="{{ user_obj.first_name }}" required></td>
+              </tr>
+              <tr>
+                <th>Last Name</th>
+                <td><input type="text" name="last_name" class="form-control" value="{{ user_obj.last_name }}" required></td>
+              </tr>
+              <tr>
+                <th>Email</th>
+                <td><input type="email" name="email" class="form-control" value="{{ user_obj.email }}" required></td>
+              </tr>
+             <tr>
+            <th>Company Name</th>
+            <td>
+                <select name="company_name" class="form-select" required>
+                {% for value, label in user_obj.COMPANY_CHOICES %}
+                    <option value="{{ value }}" {% if user_obj.company_name == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+                </select>
+            </td>
+            </tr>
+
+              <tr>
+                <th>Position</th>
+                <td>
+                  <select name="position" class="form-select" required>
+                    {% for value, label in user_obj.POSITION_CHOICES %}
+                      <option value="{{ value }}" {% if user_obj.position == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <th>Zone</th>
+                <td>
+                  <select name="zone" class="form-select" required>
+                    {% for value, label in user_obj.ZONE_CHOICES %}
+                      <option value="{{ value }}" {% if user_obj.zone == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <th>Branch</th>
+                <td>
+                  <select name="branch" class="form-select" required>
+                    {% for value, label in user_obj.BRANCH_CHOICES %}
+                      <option value="{{ value }}" {% if user_obj.branch == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <th>Contact</th>
+                <td><input type="text" name="contact" class="form-control" value="{{ user_obj.contact }}" required></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="d-flex justify-content-end gap-2">
+            <a href="{% url 'user_list' %}" class="btn btn-secondary btn-sm">
+              ⬅ Cancel
+            </a>
+
+            <button type="submit" id="editBtn" class="btn btn-success btn-sm d-flex align-items-center gap-2">
+              <span id="editBtnText">Update User</span>
+              <div id="editBtnSpinner" class="spinner-border spinner-border-sm text-light d-none" role="status" aria-hidden="true"></div>
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* Remove backgrounds to blend with page */
+    .table {
+      background: transparent !important;
+    }
+    .table th, .table td {
+      background: transparent !important;
+      vertical-align: middle;
+    }
+    input, select {
+      background: transparent !important;
+      border: 1px solid #ccc !important;
+      border-radius: 4px !important;
+      padding: 6px 8px !important;
+      width: 100% !important;
+    }
+    /* Responsive */
+    @media (max-width: 768px) {
+      .table th, .table td {
+        display: block;
+        width: 100% !important;
+      }
+      .table tr {
+        display: block;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 10px;
+      }
+      .table th {
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+    }
+  </style>
+
+  <script>
+    document.getElementById("editUserForm").addEventListener("submit", function () {
+      const btn = document.getElementById("editBtn");
+      const text = document.getElementById("editBtnText");
+      const spinner = document.getElementById("editBtnSpinner");
+
+      text.textContent = "Updating...";
+      spinner.classList.remove("d-none");
+      btn.disabled = true;
+    });
+  </script>
+{% endblock %}

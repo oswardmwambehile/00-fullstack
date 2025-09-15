@@ -1,0 +1,70 @@
+{% extends "company/base.html" %}
+{% load humanize %}
+
+{% block content %}
+  {% include "company/sidebar.html" %}
+
+  <div class="main-panel">
+    <div class="main-header">
+      {% include "company/nav.html" %}
+    </div>
+
+    <div class="container mt-8">
+      <div class="page-inner">
+
+        <!-- ✅ Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3><i class="fas fa-boxes"></i> Products Interested – {{ visit.company_name.company_name }}</h3>
+          <a href="javascript:history.back()" class="btn btn-sm btn-outline-secondary">← Back</a>
+        </div>
+
+        <!-- ✅ Products Interested Table -->
+        <div class="mb-4">
+          <h5><i class="fas fa-industry me-1 text-info"></i> Products Interested</h5>
+          {% if products_interested %}
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle">
+              <thead>
+                <tr>
+                  <th>Created At</th>
+                  <th>Product</th>
+                  <th>Order Estimate</th>
+                  <th>Final Order Amount</th>
+                  <th>Payment Collected</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for product in products_interested %}
+                <tr>
+                  <td>{{ product.visit.created_at|date:"Y-m-d H:i" }}</td>
+                  <td>{{ product.get_product_interested_display }}</td>
+                  <td>{{ product.order_estimate|default:"-"|intcomma }}</td>
+                  <td>{{ product.final_order_amount|default:"-"|intcomma }}</td>
+                  <td>
+                    {% if product.payment_collected %}
+                      <span class="badge bg-success">
+                        Yes ({{ product.payment_collected|floatformat:2|intcomma }})
+                      </span>
+                    {% else %}
+                      <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+                <tr class="table-info fw-bold">
+                  <th colspan="3" class="text-end">Totals:</th>
+                  <th>{{ total_final_order|floatformat:2|intcomma }}</th>
+                  <th>{{ total_payment_collected|floatformat:2|intcomma }}</th>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+            <p class="text-muted">No products interested added.</p>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+{% endblock %}

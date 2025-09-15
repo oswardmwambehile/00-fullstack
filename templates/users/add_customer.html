@@ -1,0 +1,235 @@
+{% extends "users/base.html" %}
+{% load static %}
+
+{% block content %}
+  {% include "users/sidebar.html" %}
+  <div class="main-panel">
+    <div class="main-header">
+      {% include "users/nav.html" %}
+    </div>
+
+    <div class="container">
+      <div class="page-inner">
+
+        <!-- ✅ Back Link -->
+        <div class="mb-3">
+          <a href="{% url 'customer_list' %}" class="btn btn-outline-primary btn-sm">
+            ⬅ Go Back
+          </a>
+        </div>
+
+        <h3 class="mb-4">Add Customer</h3>
+
+        <!-- ✅ Messages -->
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+
+        <form method="post" class="custom-form">
+          {% csrf_token %}
+
+          <!-- Customer Form -->
+          <div class="mb-4">
+            <h5>Customer Details</h5>
+
+            {% if customer_form.errors %}
+              <div class="alert alert-danger">
+                <strong>Please correct the errors below.</strong>
+              </div>
+            {% endif %}
+
+            <table class="table border-0">
+              <tbody>
+                <tr>
+                  <th>Designation</th>
+                  <td>
+                    {{ customer_form.designation }}
+                    {% if customer_form.designation.errors %}
+                      <div class="text-danger small">{{ customer_form.designation.errors.0 }}</div>
+                    {% endif %}
+                  </td>
+                </tr>
+                <tr>
+                  <th>Company Name</th>
+                  <td>
+                    {{ customer_form.company_name }}
+                    {% if customer_form.company_name.errors %}
+                      <div class="text-danger small">{{ customer_form.company_name.errors.0 }}</div>
+                    {% endif %}
+                  </td>
+                </tr>
+                <tr>
+                  <th>Location</th>
+                  <td>
+                    {{ customer_form.location }}
+                    {% if customer_form.location.errors %}
+                      <div class="text-danger small">{{ customer_form.location.errors.0 }}</div>
+                    {% endif %}
+                  </td>
+                </tr>
+                <tr>
+                  <th>Email</th>
+                  <td>
+                    {{ customer_form.email }}
+                    {% if customer_form.email.errors %}
+                      <div class="text-danger small">{{ customer_form.email.errors.0 }}</div>
+                    {% endif %}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Contact Formset -->
+          <div class="mb-4">
+            <h5>Contact Details</h5>
+            {{ formset.management_form }}
+
+            <table id="contact-table" class="table border-0">
+              <thead>
+                <tr>
+                  <th>Contact Name</th>
+                  <th>Contact Detail</th>
+                  <th>Delete?</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for form in formset %}
+                  <tr>
+                    {{ form.id }}
+                    <td>
+                      {{ form.contact_name }}
+                      {% if form.contact_name.errors %}
+                        <div class="text-danger small">{{ form.contact_name.errors.0 }}</div>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {{ form.contact_detail }}
+                      {% if form.contact_detail.errors %}
+                        <div class="text-danger small">{{ form.contact_detail.errors.0 }}</div>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {{ form.DELETE }}
+                      <button type="button" class="btn btn-sm btn-danger remove-row">✖</button>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+
+            <button type="button" id="add-contact" class="btn btn-outline-success btn-sm">➕ Add Contact</button>
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" class="btn btn-primary">💾 Save Customer</button>
+          <a href="{% url 'customer_list' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Styles -->
+  <style>
+    .custom-form table,
+    .custom-form td,
+    .custom-form th {
+      background: transparent !important;
+      vertical-align: middle;
+    }
+
+    .custom-form input,
+    .custom-form select,
+    .custom-form textarea {
+      background: transparent !important;
+      border: 1px solid #ccc;
+      width: 100%;
+      padding: 6px;
+      border-radius: 4px;
+    }
+
+    .custom-form input:focus,
+    .custom-form select:focus,
+    .custom-form textarea:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 3px rgba(0,123,255,0.5);
+    }
+
+    /* ✅ Error text */
+    .text-danger.small {
+      font-size: 0.85rem;
+      margin-top: 4px;
+    }
+
+    /* ✅ Make fully responsive */
+    @media (max-width: 768px) {
+      .custom-form table,
+      .custom-form tbody,
+      .custom-form tr,
+      .custom-form th,
+      .custom-form td {
+        display: block;
+        width: 100% !important;
+      }
+
+      .custom-form th {
+        font-weight: bold;
+        margin-top: 12px;
+      }
+
+      .custom-form td {
+        margin-bottom: 10px;
+      }
+
+      /* Inputs take full width */
+      .custom-form input,
+      .custom-form select,
+      .custom-form textarea {
+        width: 100% !important;
+      }
+    }
+  </style>
+
+  <!-- ✅ Dynamic Formset -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const addBtn = document.getElementById("add-contact");
+      const tableBody = document.querySelector("#contact-table tbody");
+      const totalForms = document.querySelector("#id_contacts-TOTAL_FORMS");
+
+      addBtn.addEventListener("click", function () {
+        let formIndex = parseInt(totalForms.value);
+        let newRow = tableBody.querySelector("tr").cloneNode(true);
+
+        newRow.querySelectorAll("input").forEach(function (input) {
+          if (input.type === "checkbox") {
+            input.checked = false;
+          } else {
+            input.value = "";
+          }
+          if (input.name) {
+            input.name = input.name.replace(/contacts-(\d+)-/, `contacts-${formIndex}-`);
+          }
+          if (input.id) {
+            input.id = input.id.replace(/contacts-(\d+)-/, `contacts-${formIndex}-`);
+          }
+        });
+
+        tableBody.appendChild(newRow);
+        totalForms.value = formIndex + 1;
+      });
+
+      tableBody.addEventListener("click", function (e) {
+        if (e.target.classList.contains("remove-row")) {
+          const row = e.target.closest("tr");
+          const deleteCheckbox = row.querySelector("input[type='checkbox']");
+          if (deleteCheckbox) deleteCheckbox.checked = true;
+          row.style.display = "none";
+        }
+      });
+    });
+  </script>
+{% endblock %}

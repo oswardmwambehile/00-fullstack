@@ -1,0 +1,144 @@
+{% extends "users/base.html" %}
+{% load static %}
+
+{% block content %}
+  {% include "users/sidebar.html" %}
+  <div class="main-panel">
+    <div class="main-header">
+      <div class="main-header-logo">
+        <div class="logo-header" data-background-color="dark">
+          <a href="index.html" class="logo">
+            <img
+              src="{% static 'assets/img/kaiadmin/logo_light.svg' %}"
+              alt="navbar brand"
+              class="navbar-brand"
+              height="20"
+            />
+          </a>
+          <div class="nav-toggle">
+            <button class="btn btn-toggle toggle-sidebar"><i class="gg-menu-right"></i></button>
+            <button class="btn btn-toggle sidenav-toggler"><i class="gg-menu-left"></i></button>
+          </div>
+          <button class="topbar-toggler more"><i class="gg-more-vertical-alt"></i></button>
+        </div>
+      </div>
+      {% include "users/nav.html" %}
+    </div>
+
+    <div class="container">
+      <div class="page-inner">
+        <div class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4">
+          <div>
+            <!-- Optional top content -->
+          </div>
+        </div>
+
+        <!-- Main Content Section -->
+        <div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+          <div class="w-100" style="max-width: 800px;">
+
+            <!-- Welcome Heading -->
+            <h1 class="text-center mb-4" style="font-family: 'Inter', sans-serif;">
+              <span style="font-size: 36px; font-weight: 800; color: #1a1a1a; display: inline-block; letter-spacing: -0.5px;">
+                Welcome,
+              </span>
+              <span style="font-size: 32px; font-weight: 700; color: #0d6efd; margin-left: 6px;">
+                {{ request.user.first_name|default:"User" }}
+              </span>
+              <span style="font-size: 32px; font-weight: 700; color: #198754; margin-left: 4px;">
+                {{ request.user.last_name|default:"" }}
+              </span>
+              <span style="font-size: 32px; font-weight: 700; color: #6c757d;">👋</span>
+            </h1>
+
+            <!-- Separator -->
+            <hr style="height: 4px; border: none; background: linear-gradient(90deg, #ff416c, #0072ff, #42e695); opacity: 0.9; margin: 20px 0; border-radius: 3px;">
+
+            <!-- Description -->
+            <p class="text-secondary fs-5 text-center mb-4" style="line-height: 1.6;">
+              Stay on top of your appointments with our visit tracking system.  
+              Easily schedule, manage, and review your visits — all in one place.  
+              Keep everything organized and never miss a follow-up again.
+            </p>
+
+            <!-- Buttons Row -->
+            <div class="text-center">
+              <div class="d-flex flex-column flex-md-row justify-content-center gap-3">
+
+                <!-- Add Visits -->
+                <a href="{%url 'new_visit' %}" class="gradient-btn">
+                  <i class="fa fa-calendar-plus me-2"></i> Add Visits
+                </a>
+
+                
+
+                <!-- Customer Directory -->
+                <a href="" class="gradient-btn bg-warning text-dark">
+                  <i class="fas fa-users me-2"></i> Customer Directory
+                </a>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Charts (if any can go here) -->
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Styles for Buttons -->
+  <style>
+    .gradient-btn {
+      display: inline-block;
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding: 14px 30px;
+      color: #fff !important;
+      background: linear-gradient(90deg, #0072ff, #00c6ff);
+      border: none;
+      border-radius: 50px;
+      box-shadow: 0 6px 15px rgba(0, 114, 255, 0.3);
+      transition: all 0.3s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .gradient-btn:hover {
+      background: linear-gradient(90deg, #00c6ff, #0072ff);
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 10px 25px rgba(0, 114, 255, 0.45);
+    }
+
+    .gradient-btn.bg-success {
+      background: linear-gradient(90deg, #28a745, #218838);
+    }
+
+    .gradient-btn.bg-success:hover {
+      background: linear-gradient(90deg, #218838, #28a745);
+    }
+
+    .gradient-btn.bg-warning {
+      background: linear-gradient(90deg, #ffc107, #e0a800);
+      color: #212529 !important;
+    }
+
+    .gradient-btn.bg-warning:hover {
+      background: linear-gradient(90deg, #e0a800, #ffc107);
+    }
+
+    .gradient-btn i {
+      font-size: 1.2rem;
+      vertical-align: middle;
+    }
+
+    @media (max-width: 768px) {
+      .gradient-btn {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  </style>
+{% endblock %}

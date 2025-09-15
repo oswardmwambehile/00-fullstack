@@ -1,0 +1,82 @@
+{% extends "users/base.html" %}
+{% load static %}
+
+{% block content %}
+  {% include "users/sidebar.html" %}
+  <div class="main-panel">
+    <div class="main-header">
+      {% include "users/nav.html" %}
+    </div>
+
+    <div class="container">
+      <div class="page-inner max-w-2xl mx-auto">
+
+        <!-- Back Button -->
+        <div class="mb-3">
+          <a href="{% url 'customer_list' %}" class="btn btn-outline-primary btn-sm">
+            ⬅ Back to Customers
+          </a>
+        </div>
+
+        <!-- 🔥 Modern Card Confirmation -->
+        <div class="confirm-card shadow-lg rounded-3 p-4 bg-white">
+          <div class="card-header text-center mb-3">
+            <h4 class="text-danger fw-bold mb-1">⚠ Confirm Delete</h4>
+            <small class="text-muted">This action cannot be undone</small>
+          </div>
+
+          <div class="card-body text-center">
+            <p class="mb-4 fs-5">
+              Are you sure you want to permanently delete<br>
+              <strong class="text-dark">{{ customer.company_name }}</strong>?
+            </p>
+
+            <form method="post" class="d-flex justify-content-center gap-3 flex-wrap">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger px-4">
+                🗑 Yes, Delete
+              </button>
+              <a href="{% url 'customer_list' %}" class="btn btn-outline-secondary px-4">
+                Cancel
+              </a>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ✨ Styles -->
+  <style>
+    .confirm-card {
+      max-width: 500px;
+      margin: 0 auto;
+      border: 1px solid #e5e5e5;
+      background: #fff;
+    }
+
+    .confirm-card .card-header {
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .confirm-card h4 {
+      font-size: 1.4rem;
+    }
+
+    .confirm-card p {
+      color: #444;
+    }
+
+    .btn {
+      min-width: 130px;
+    }
+
+    @media (max-width: 768px) {
+      .btn {
+        width: auto;
+        flex: 1;
+      }
+    }
+  </style>
+{% endblock %}

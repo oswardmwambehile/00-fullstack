@@ -1,0 +1,191 @@
+{% extends "company/base.html" %}
+{% load humanize %}
+
+{% block content %}
+  {% include "company/sidebar.html" %}
+
+  <div class="main-panel">
+    <div class="main-header">
+      {% include "company/nav.html" %}
+    </div>
+
+    <div class="container-fluid mt-4 mb-5 px-3 px-md-4">
+      <div class="page-inner pt-5">
+
+        <!-- ✅ Page Header -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4 mt-5">
+          <h3 class="mb-0"><i class="fas fa-user"></i> User Detail – {{ user.get_full_name }}</h3>
+          <a href="{% url 'user_list' %}" class="btn btn-sm btn-outline-secondary">← Back to Users</a>
+        </div>
+
+        <hr>
+
+        <!-- ✅ User Info -->
+        <div class="mb-4">
+          <h5 class="mb-3"><i class="fas fa-info-circle"></i> User Info</h5>
+          <div class="row">
+            <div class="col-md-6 mb-2">
+              <p><strong>Email:</strong> {{ user.email }}</p>
+              <p><strong>Phone:</strong> {{ user.contact|default:"-" }}</p>
+              <p><strong>Company Name:</strong> {{ user.company_name|default:"-" }}</p>
+            </div>
+            <div class="col-md-6 mb-2">
+              <p><strong>Position:</strong> {{ user.position|default:"-" }}</p>
+              <p><strong>Zone:</strong> {{ user.zone|default:"-" }}</p>
+              <p><strong>Branch:</strong> {{ user.branch|default:"-" }}</p>
+            </div>
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- ✅ Summary Cards -->
+        <style>
+          .summary-card { min-height: 150px; }
+          .summary-card .card-title {
+            font-size: 0.95rem;
+            margin-bottom: 0.3rem;
+            color: #555;
+          }
+          .summary-card .card-text {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #000;
+          }
+          .summary-header {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 0.5rem;
+            color: #333;
+          }
+        </style>
+
+        <!-- 🔷 New Visit Summary -->
+        <div class="row mb-4">
+          <div class="col-12 summary-header">
+            <i class="fas fa-map-marker-alt me-2 text-primary"></i> Visit Summary
+          </div>
+
+          <div class="col-md-3">
+            <div class="card text-center summary-card">
+              <div class="card-body d-flex flex-column justify-content-center">
+                <i class="fas fa-map-marker-alt fa-lg mb-2 text-primary"></i>
+                <h5 class="card-title">Total Visits</h5>
+                <p class="card-text">{{ total_new_visits }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="card text-center summary-card">
+              <div class="card-body d-flex flex-column justify-content-center">
+                <i class="fas fa-shopping-cart fa-lg mb-2 text-success"></i>
+                <h5 class="card-title">Orders</h5>
+                <p class="card-text">{{ total_orders }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="card text-center summary-card">
+              <div class="card-body d-flex flex-column justify-content-center">
+                <i class="fas fa-coins fa-lg mb-2 text-warning"></i>
+                <h5 class="card-title">Order Amount</h5>
+                <p class="card-text">{{ total_order_amount|intcomma }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="card text-center summary-card">
+              <div class="card-body d-flex flex-column justify-content-center">
+                <i class="fas fa-hand-holding-usd fa-lg mb-2 text-success"></i>
+                <h5 class="card-title">Payments Collected</h5>
+                <p class="card-text">{{ total_payments|intcomma }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- ✅ Visits Table -->
+        <div class="mb-4">
+          <h5 class="mb-3"><i class="fas fa-clipboard-list"></i> Visits and Products</h5>
+          <div class="table-responsive">
+            <table class="table table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th>Visit Date</th>
+                  <th>Company</th>
+                  <th>Contact Person</th>
+                  <th>Stage</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for visit in combined_visits %}
+                  <tr>
+                    <td>{{ visit.created_at|date:"M d, Y H:i" }}</td>
+                    <td>{{ visit.company_name.company_name }}</td>
+                    <td>{{ visit.contact_person.contact_name }}</td>
+                    
+                    <!-- Meeting Stage with colors -->
+                    <td>
+                      {% if visit.meeting_stage == "Initial" %}
+                        <span class="badge bg-primary">{{ visit.meeting_stage }}</span>
+                      {% elif visit.meeting_stage == "Follow-up" %}
+                        <span class="badge bg-info text-dark">{{ visit.meeting_stage }}</span>
+                      {% elif visit.meeting_stage == "Negotiation" %}
+                        <span class="badge bg-warning text-dark">{{ visit.meeting_stage }}</span>
+                      {% elif visit.meeting_stage == "Closed" %}
+                        <span class="badge bg-success">{{ visit.meeting_stage }}</span>
+                      {% else %}
+                        <span class="badge bg-secondary">{{ visit.meeting_stage }}</span>
+                      {% endif %}
+                    </td>
+
+                    <!-- Status with colors -->
+                    <td>
+                      {% if visit.status == "Pending" %}
+                        <span class="badge bg-warning text-dark">{{ visit.status }}</span>
+                      {% elif visit.status == "Completed" %}
+                        <span class="badge bg-success">{{ visit.status }}</span>
+                      {% elif visit.status == "Cancelled" %}
+                        <span class="badge bg-danger">{{ visit.status }}</span>
+                      {% else %}
+                        <span class="badge bg-secondary">{{ visit.status }}</span>
+                      {% endif %}
+                    </td>
+
+                    <!-- Action -->
+                    <td>
+                      {% if visit.products.all %}
+                        <a href="{% url 'product_detail' visit.id %}" class="btn btn-sm btn-info">
+                          <i class="fas fa-eye"></i> View Products
+                        </a>
+                      {% else %}
+                        <span class="text-muted">No Products</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="6" class="text-center text-muted">
+                      <i class="fas fa-info-circle"></i> No visits added by this user.
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+{% endblock %}

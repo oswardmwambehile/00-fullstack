@@ -1,0 +1,461 @@
+{% extends "users/base.html" %}
+{% load static %}
+
+{% block content %}
+{% include "users/sidebar.html" %}
+
+<div class="main-panel">
+  <div class="main-header">
+    {% include "users/nav.html" %}
+  </div>
+
+  <div class="container">
+  <div class="page-inner">
+    <div class="row">
+      <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">Add follow-up Visit</h2>
+  <a href="{% url 'add_visit' %}" class="btn btn-outline-dark">
+    <i class="bi bi-house-door"></i> Home
+  </a>
+</div>
+
+        <form method="post" class="needs-validation" novalidate>
+          {% csrf_token %}
+
+          <!-- ---------------- Visit Info ---------------- -->
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Company</label>
+              {{ form.company_name }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Contact Person</label>
+              {{ form.contact_person }}
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Contact Number</label>
+              {{ form.contact_number }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Designation</label>
+              {{ form.designation }}
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Item Discussed</label>
+            {{ form.item_discussed }}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Location</label>
+            <div id="map" style="height:300px; border:1px solid #ccc;"></div>
+            <small id="location-details" class="form-text text-muted">📍 Lat / Lon</small>
+            {{ form.latitude }}
+            {{ form.longitude }}
+          </div>
+
+          <!-- ---------------- Stage + Outcome ---------------- -->
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Meeting Stage</label>
+              {{ form.meeting_stage }}
+            </div>
+
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Client Budget</label>
+              {{ form.client_budget }}
+            </div>
+
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Contract Outcome</label>
+              {{ form.contract_outcome }}
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Contract Amount</label>
+              {{ form.contract_amount }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Reason Lost</label>
+              {{ form.reason_lost }}
+            </div>
+          </div>
+
+          <!-- Global: is_order_final (Proposal) and is_payment_collected (closing overall) -->
+          <div class="row">
+            <div class="col-md-3 mb-3 form-check">
+              {{ form.is_order_final }} <label class="form-check-label ms-2">Is this final order?</label>
+            </div>
+            <div class="col-md-3 mb-3 form-check">
+              {{ form.is_payment_collected }} <label class="form-check-label ms-2">Payment collected (overall)</label>
+            </div>
+          </div>
+
+          <!-- ---------------- Products Formset ---------------- -->
+          <h4>Products Interested</h4>
+          <div id="production-line-formset">
+            {{ formset.management_form }}
+            {% for pf in formset %}
+            <div class="production-line-item border rounded p-3 mb-3 position-relative">
+              {% if pf.instance.pk %}
+                <input type="hidden" name="{{ pf.prefix }}-id" value="{{ pf.instance.pk }}">
+              {% endif %}
+
+              <button type="button" class="btn btn-sm btn-danger remove-line position-absolute top-0 end-0">X</button>
+
+              <div class="mb-3">
+                <label>Product</label>
+                {{ pf.product_interested }}
+              </div>
+
+              <div class="mb-3">
+                <label>Order Estimate</label>
+                {{ pf.order_estimate }}
+              </div>
+
+              <div class="mb-3">
+                <label>Final Order Amount</label>
+                {{ pf.final_order_amount }}
+              </div>
+
+              <div class="mb-3">
+                <label>Payment Collected</label>
+                {{ pf.payment_collected }}
+              </div>
+
+              <div class="mb-3 form-check">
+                {{ pf.DELETE }} <label class="form-check-label ms-2">Delete</label>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <button type="button" id="add-more-lines" class="btn btn-secondary mb-3">Add Product</button>
+          <button type="submit" class="btn btn-primary">Save Visit</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- URL templates for JS -->
+<div id="url-templates"
+     data-get-contacts-url="{% url 'get_contacts' 0 %}"
+     data-get-contact-details-url="{% url 'get_contact_details' 0 %}"
+     style="display:none"></div>
+
+<!-- Leaflet CSS/JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  function wrapperForField(el){ 
+    return el ? (el.closest('.mb-3') || el.parentElement) : null; 
+  }
+
+  function showField(el, show=true){ 
+    if(!el) return; 
+    const wrapper = wrapperForField(el); 
+    if(!wrapper) return; 
+    if(show){ wrapper.classList.remove('d-none'); el.disabled=false; } 
+    else { wrapper.classList.add('d-none'); el.disabled=false; }
+  }
+
+  function toggleProductRowFields(row, stage, outcome){
+    const orderEstimate = row.querySelector('[name$="order_estimate"]');
+    const finalOrder = row.querySelector('[name$="final_order_amount"]');
+    const paymentCollected = row.querySelector('[name$="payment_collected"]');
+
+    showField(orderEstimate,false);
+    showField(finalOrder,false);
+    showField(paymentCollected,false);
+
+    if(stage === "Proposal or Negotiation"){
+      showField(orderEstimate,true); 
+    } else if(stage === "Closing"){
+      if(outcome==="Won"){
+        showField(finalOrder,true);
+        showField(paymentCollected,false);
+      }
+      if(outcome==="Lost"){
+        showField(finalOrder,false);
+        showField(paymentCollected,false);
+      }
+    } else if(stage==="Payment Followup"){
+      showField(paymentCollected,true);
+    }
+  }
+
+  function applyStageToAllRows(stage,outcome){
+    document.querySelectorAll(".production-line-item").forEach(row=>{
+      toggleProductRowFields(row,stage,outcome);
+    });
+
+    const clientBudget = document.querySelector('[name="client_budget"]');
+    const contractOutcome = document.querySelector('[name="contract_outcome"]');
+    const contractAmount = document.querySelector('[name="contract_amount"]');
+    const reasonLost = document.querySelector('[name="reason_lost"]');
+    const isOrderFinal = document.querySelector('[name="is_order_final"]');
+    const isPaymentCollectedGlobal = document.querySelector('[name="is_payment_collected"]');
+
+    [clientBudget, contractOutcome, contractAmount, reasonLost, isOrderFinal, isPaymentCollectedGlobal].forEach(el=>{
+      if(el) showField(el,false);
+    });
+
+    if(stage==="Qualifying" && clientBudget) showField(clientBudget,true);
+    if(stage==="Proposal or Negotiation" && isOrderFinal) showField(isOrderFinal,true);
+
+    if(stage==="Closing" && contractOutcome){
+      showField(contractOutcome,true);
+      if(outcome==="Won" && contractAmount) showField(contractAmount,true);
+      if(outcome==="Lost" && reasonLost) showField(reasonLost,true);
+    }
+
+    if(stage==="Payment Followup" && isPaymentCollectedGlobal){
+      showField(isPaymentCollectedGlobal,true);
+      document.querySelectorAll(".production-line-item").forEach(row=>{
+        toggleProductRowFields(row,stage,outcome);
+      });
+    }
+  }
+
+  const stageSelect = document.querySelector('[name="meeting_stage"]');
+  const outcomeSelect = document.querySelector('[name="contract_outcome"]');
+
+  function refreshStageOutcome(){
+    applyStageToAllRows(stageSelect?.value,outcomeSelect?.value);
+  }
+
+  stageSelect?.addEventListener('change',refreshStageOutcome);
+  outcomeSelect?.addEventListener('change',refreshStageOutcome);
+  refreshStageOutcome();
+
+  const formsetDiv = document.getElementById("production-line-formset");
+
+  document.getElementById("add-more-lines")?.addEventListener('click',()=>{
+    setTimeout(()=>{
+      const stage = stageSelect?.value;
+      const outcome = outcomeSelect?.value;
+      const lastRow = formsetDiv.querySelector(".production-line-item:last-child");
+      if(lastRow) toggleProductRowFields(lastRow,stage,outcome);
+      formsetDiv.querySelectorAll(".remove-line").forEach(btn=>{
+        btn.onclick=()=>btn.closest(".production-line-item").remove();
+      });
+    },50);
+  });
+
+  formsetDiv.querySelectorAll(".remove-line").forEach(btn=>{
+    btn.onclick=()=>btn.closest(".production-line-item").remove();
+  });
+
+  const latInput = document.getElementById("id_latitude");
+  const lonInput = document.getElementById("id_longitude");
+  const locationDetails = document.getElementById("location-details");
+  let map, marker;
+
+  function initMapAt(lat,lon,zoom=15){
+    if(!map){
+      map = L.map('map').setView([lat,lon],zoom);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+      map.on('click',e=>setMarker(e.latlng.lat,e.latlng.lng));
+    } else map.setView([lat,lon],zoom);
+    setMarker(lat,lon);
+  }
+
+  function setMarker(lat,lon){
+    if(marker) marker.setLatLng([lat,lon]);
+    else{
+      marker=L.marker([lat,lon],{draggable:true}).addTo(map);
+      marker.on('dragend',e=>{ const pos=e.target.getLatLng(); updateLatLonInputs(pos.lat,pos.lng); });
+    }
+    updateLatLonInputs(lat,lon);
+  }
+
+  function updateLatLonInputs(lat,lon){
+    if(latInput) latInput.value=lat.toFixed(6);
+    if(lonInput) lonInput.value=lon.toFixed(6);
+    if(locationDetails) locationDetails.textContent=`📍 Lat: ${lat.toFixed(5)}, Lon: ${lon.toFixed(5)}`;
+  }
+
+  if(latInput && latInput.value && lonInput && lonInput.value){
+    initMapAt(parseFloat(latInput.value),parseFloat(lonInput.value));
+  } else if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      pos=>initMapAt(pos.coords.latitude,pos.coords.longitude),
+      ()=>{ locationDetails.textContent="❌ Unable to retrieve location"; initMapAt(0,0,2); }
+    );
+  } else {
+    initMapAt(0,0,2);
+  }
+
+});
+</script>
+
+<style>
+  /* === GENERAL PAGE RESET === */
+  body, .main-panel, .container, .page-inner, form {
+    background: none !important;
+    box-shadow: none !important;
+  }
+
+  /* === TITLES === */
+  h1, h2, h5 {
+    font-weight: 600;
+    color: #222;
+  }
+
+  /* === FORM STYLING === */
+  label {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  select,
+  textarea {
+    width: 100%;
+    background: transparent;
+    border: 2px solid #ccc;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 14px;
+    color: #222;
+    transition: border-color 0.2s ease;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: #007bff;
+    outline: none;
+  }
+
+  /* === BUTTON STYLING === */
+  button, .btn {
+    font-weight: 500;
+    border-radius: 6px;
+    padding: 8px 16px;
+  }
+
+  .btn-outline-primary {
+    border: 2px solid #007bff;
+    background: transparent;
+    color: #007bff;
+  }
+
+  .btn-outline-primary:hover {
+    background: #007bff;
+    color: #fff;
+  }
+
+  .btn-danger, .btn-success {
+    font-weight: 600;
+  }
+
+  /* === MAP STYLING === */
+  #map {
+    height: 220px !important;
+    width: 100%;
+    border: 2px solid #aaa;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+
+  /* === FORMSET BOX === */
+  .production-line-item {
+    background: none !important;
+    border: 2px solid #ccc;
+    border-radius: 6px;
+  }
+
+  /* === LOCATION BOX === */
+  #location-details {
+    background: none;
+    border: 2px dashed #999;
+    font-size: 13px;
+    color: #555;
+  }
+
+  /* === ERROR TEXT === */
+  .text-danger {
+    font-size: 13px;
+  }
+
+  /* === BADGE STYLE (in list view, optional) === */
+  .badge {
+    font-size: 12px;
+    border-radius: 4px;
+  }
+
+ /* === RESPONSIVE FIXES === */
+@media (max-width: 767.98px) {
+  /* Inputs full width */
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  select,
+  textarea {
+    width: 100% !important;
+  }
+
+  /* Stack columns */
+  .row > [class*="col-"] {
+    flex: 0 0 100%;
+    max-width: 100%;
+    margin-bottom: 15px;
+  }
+
+  /* Buttons compact, inline, auto width */
+  .btn {
+    width: auto !important;
+    display: inline-block !important;
+    padding: 6px 14px;
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+
+  /* Make danger & primary buttons outline style on mobile */
+  .btn-primary {
+    background: transparent !important;
+    color: #007bff !important;
+    border: 2px solid #007bff !important;
+  }
+  .btn-primary:hover {
+    background: #007bff !important;
+    color: #fff !important;
+  }
+
+  .btn-danger {
+    background: transparent !important;
+    color: #dc3545 !important;
+    border: 2px solid #dc3545 !important;
+  }
+  .btn-danger:hover {
+    background: #dc3545 !important;
+    color: #fff !important;
+  }
+}
+
+</style>
+<style>
+  .form-label { font-weight:600; }
+  .production-line-item { position: relative; }
+  .remove-line { z-index: 5; }
+</style>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+{% endblock %}

@@ -1,0 +1,151 @@
+{% extends "users/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+  {% include "users/sidebar.html" %}
+  <div class="main-panel">
+    <div class="main-header">
+      {% include "users/nav.html" %}
+    </div>
+
+    <div class="container">
+      <div class="page-inner">
+        <div class="container mt-4">
+          <h3 class="mb-3">
+            <i class="fas fa-clipboard-list text-primary me-2"></i> All New Visits Added
+          </h3>
+
+          <!-- Filter by Created Date (optional) -->
+          <form method="get" class="row g-3 mb-4 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label">Created Date</label>
+              <input type="date" name="created_date" class="form-control" value="{{ created_date }}">
+            </div>
+            <div class="col-md-8 d-flex flex-wrap gap-2">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-filter me-1"></i> Filter
+              </button>
+              <a href="{% url 'all_visit_list' %}" class="btn btn-secondary">
+                <i class="fas fa-undo me-1"></i> Reset
+              </a>
+              <a href="{% url 'new_visit' %}" class="btn btn-success">
+                <i class="fas fa-plus me-1"></i> New Visit
+              </a>
+            </div>
+          </form>
+
+          <!-- Visits Table -->
+          {% if visits %}
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle w-100 custom-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Company Name</th>
+                  <th>Location</th>
+                  <th>Status</th>
+                  <th>Tag</th>
+                  <th>Created At</th>
+                   <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for v in visits %}
+                <tr>
+                  <td>{{ forloop.counter0|add:visits.start_index }}</td>
+                  <td>{{ v.company_name.company_name }}</td>
+                  <td>
+                    {% if v.latitude and v.longitude %}
+                      <i class="fas fa-map-marker-alt text-danger me-1"></i>
+                      {{ v.place_name }}<br>
+                      <small>{{ v.region }} {{ v.zone }} {{ v.nation }}</small><br>
+                      <a href="https://www.google.com/maps/search/?api=1&query={{ v.latitude }},{{ v.longitude }}" 
+                         target="_blank" class="ms-1 text-decoration-none">
+                        <i class="fas fa-map-location-dot me-1"></i> View on Map
+                      </a>
+                    {% else %}
+                      <span class="text-muted">Not Available</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="badge 
+                      {% if v.status == 'Open' %}bg-info
+                      {% elif v.status == 'Won' %}bg-success
+                      {% elif v.status == 'Closed' %}bg-secondary
+                      {% elif v.status == 'Lost' %}bg-danger
+                      {% else %}bg-light text-dark{% endif %}">
+                      {{ v.status }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge 
+                      {% if v.tag == 'Prospect' %}bg-warning text-dark
+                      {% elif v.tag == 'Lead' %}bg-primary
+                      {% elif v.tag == 'Customer' %}bg-success
+                      {% else %}bg-light text-dark{% endif %}">
+                      {{ v.tag }}
+                    </span>
+                  </td>
+                  <td>{{ v.created_at|date:"Y-m-d H:i" }}</td>
+                  <td class="text-nowrap">
+    <!-- View Details Button -->
+    <a href="{% url 'visit_detail' v.id %}" class="btn btn-sm btn-primary me-1 mb-1">
+        <i class="fas fa-eye"></i> View Details
+    </a>
+
+    <!-- Add Follow-up Button -->
+    <a href="{%url 'update_visit' v.id %}" class="btn btn-sm btn-success mb-1">
+        <i class="fas fa-plus-circle"></i> Add Follow-up
+    </a>
+</td>
+
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center text-muted">No visits found.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+              {% if visits.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page=1{% if created_date %}&created_date={{ created_date }}{% endif %}">« First</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ visits.previous_page_number }}{% if created_date %}&created_date={{ created_date }}{% endif %}">‹ Prev</a></li>
+              {% endif %}
+
+              <li class="page-item active">
+                <span class="page-link">Page {{ visits.number }} of {{ visits.paginator.num_pages }}</span>
+              </li>
+
+              {% if visits.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ visits.next_page_number }}{% if created_date %}&created_date={{ created_date }}{% endif %}">Next ›</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ visits.paginator.num_pages }}{% if created_date %}&created_date={{ created_date }}{% endif %}">Last »</a></li>
+              {% endif %}
+            </ul>
+          </nav>
+          {% else %}
+            <p class="text-muted">No visits found.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Styling -->
+  <style>
+    .custom-table td, .custom-table th { white-space: nowrap; vertical-align: middle; padding: 8px 12px; }
+    .custom-table thead th { background: none !important; font-weight: 600; border-bottom: 2px solid #ccc; }
+    .badge { font-size: 0.85rem; }
+    @media (max-width: 768px){
+      .table-responsive { overflow-x: auto; }
+      .custom-table td, .custom-table th { font-size: 0.875rem; }
+    }
+  </style>
+
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+{% endblock %}

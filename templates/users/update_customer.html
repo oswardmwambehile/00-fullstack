@@ -1,0 +1,272 @@
+{% extends "users/base.html" %}
+{% load static %}
+
+{% block content %}
+  {% include "users/sidebar.html" %}
+  <div class="main-panel">
+    <div class="main-header">
+      {% include "users/nav.html" %}
+    </div>
+
+    <div class="container">
+      <div class="page-inner">
+
+        <!-- ✅ Back Link -->
+        <div class="mb-3">
+          <a href="{% url 'customer_list' %}" class="btn btn-outline-primary btn-sm">
+            ⬅ Go Back
+          </a>
+        </div>
+
+        <h3 class="mb-4">Update Customer</h3>
+
+        <!-- ✅ Show global messages -->
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+
+        <form method="post" class="custom-form">
+          {% csrf_token %}
+
+          <!-- Customer Form -->
+          <div class="mb-4">
+            <h5>Customer Details</h5>
+
+            {% if customer_form.errors %}
+              <div class="alert alert-danger">
+                <strong>Please correct the errors below.</strong>
+              </div>
+            {% endif %}
+
+            <table class="table border-0">
+              <tbody>
+                <tr>
+                  <th>Designation</th>
+                  <td>
+                    {{ customer_form.designation }}
+                    {% if customer_form.designation.errors %}
+                      <div class="text-danger small">{{ customer_form.designation.errors }}</div>
+                    {% endif %}
+                  </td>
+                </tr>
+                <tr>
+                  <th>Company Name</th>
+                  <td>
+                    {{ customer_form.company_name }}
+                    {% if customer_form.company_name.errors %}
+                      <div class="text-danger small">{{ customer_form.company_name.errors }}</div>
+                    {% endif %}
+                  </td>
+                </tr>
+                <tr>
+                  <th>Location</th>
+                  <td>
+                    {{ customer_form.location }}
+                    {% if customer_form.location.errors %}
+                      <div class="text-danger small">{{ customer_form.location.errors }}</div>
+                    {% endif %}
+                  </td>
+                </tr>
+                <tr>
+                  <th>Email</th>
+                  <td>
+                    {{ customer_form.email }}
+                    {% if customer_form.email.errors %}
+                      <div class="text-danger small">{{ customer_form.email.errors }}</div>
+                    {% endif %}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Contact Formset -->
+          <div class="mb-4">
+            <h5>Contact Details</h5>
+            {{ formset.management_form }}
+
+            {% if formset.non_form_errors %}
+              <div class="alert alert-danger">
+                {{ formset.non_form_errors }}
+              </div>
+            {% endif %}
+
+            <table id="contact-table" class="table border-0">
+              <thead>
+                <tr>
+                  <th>Contact Name</th>
+                  <th>Contact Detail</th>
+                  <th>Delete?</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for form in formset %}
+                  <tr>
+                    {{ form.id }}
+                    <td>
+                      {{ form.contact_name }}
+                      {% if form.contact_name.errors %}
+                        <div class="text-danger small">{{ form.contact_name.errors }}</div>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {{ form.contact_detail }}
+                      {% if form.contact_detail.errors %}
+                        <div class="text-danger small">{{ form.contact_detail.errors }}</div>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {{ form.DELETE }}
+                      <button type="button" class="btn btn-sm btn-danger remove-row">✖</button>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+
+            <!-- Add Row Button -->
+            <button type="button" id="add-contact" class="btn btn-outline-success btn-sm">➕ Add Contact</button>
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" class="btn btn-primary">💾 Update Customer</button>
+          <a href="{% url 'customer_list' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Styles -->
+    <!-- ✅ Styles -->
+    <!-- ✅ Styles -->
+  <style>
+    /* Reset table + form background */
+    .custom-form table,
+    .custom-form td,
+    .custom-form th {
+      background: transparent !important;
+      border: none !important;
+    }
+
+    /* Inputs full width */
+    .custom-form input,
+    .custom-form select,
+    .custom-form textarea {
+      background: transparent !important;
+      border: 1px solid #ccc;
+      width: 100% !important;
+      padding: 8px 10px;
+      border-radius: 5px;
+    }
+
+    /* Focus effect */
+    .custom-form input:focus,
+    .custom-form select:focus,
+    .custom-form textarea:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 5px rgba(0,123,255,0.3);
+    }
+
+    /* Table responsive */
+    #contact-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    #contact-table th,
+    #contact-table td {
+      padding: 8px;
+      vertical-align: middle;
+    }
+
+    /* ✅ Responsive for small screens */
+    @media (max-width: 768px) {
+      .custom-form table,
+      .custom-form thead,
+      .custom-form tbody,
+      .custom-form th,
+      .custom-form td,
+      .custom-form tr {
+        display: block;
+        width: 100%;
+      }
+
+      /* Hide table headers */
+      .custom-form thead {
+        display: none;
+      }
+
+      /* Each row becomes a card */
+      #contact-table tr {
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      }
+
+      #contact-table td {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100% !important;
+      }
+
+      #contact-table td input,
+      #contact-table td select {
+        width: 100% !important;
+      }
+
+      /* ✅ Buttons stay compact */
+      .btn {
+        width: auto !important;
+        margin-top: 5px;
+      }
+    }
+  </style>
+
+
+
+  <!-- JavaScript for Dynamic Formset -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const addBtn = document.getElementById("add-contact");
+      const tableBody = document.querySelector("#contact-table tbody");
+      const totalForms = document.querySelector("#id_form-TOTAL_FORMS");
+
+      // Add new row
+      addBtn.addEventListener("click", function () {
+        let formIndex = parseInt(totalForms.value);
+
+        let emptyRow = `
+          <tr>
+            <td><input type="text" name="form-${formIndex}-contact_name" class="form-control"></td>
+            <td><input type="text" name="form-${formIndex}-contact_detail" class="form-control"></td>
+            <td>
+              <input type="checkbox" name="form-${formIndex}-DELETE">
+              <button type="button" class="btn btn-sm btn-danger remove-row">✖</button>
+            </td>
+          </tr>
+        `;
+
+        tableBody.insertAdjacentHTML("beforeend", emptyRow);
+        totalForms.value = formIndex + 1;
+      });
+
+      // Instant delete row
+      tableBody.addEventListener("click", function (e) {
+        if (e.target.classList.contains("remove-row")) {
+          const row = e.target.closest("tr");
+          const deleteCheckbox = row.querySelector("input[type='checkbox']");
+          if (deleteCheckbox) {
+            deleteCheckbox.checked = true;
+          }
+          row.style.display = "none";
+        }
+      });
+    });
+  </script>
+{% endblock %}

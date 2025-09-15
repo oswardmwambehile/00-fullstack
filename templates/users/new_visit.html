@@ -1,0 +1,405 @@
+{% extends "users/base.html" %}
+{% load static %}
+
+{% block content %}
+{% include "users/sidebar.html" %}
+
+<div id="url-templates" 
+     data-get-contacts-url="{% url 'get_contacts' 0 %}" 
+     data-get-contact-details-url="{% url 'get_contact_details' 0 %}">
+</div>
+
+<div class="main-panel">
+  <div class="main-header">
+    {% include "users/nav.html" %}
+  </div>
+
+  <div class="container">
+    <div class="page-inner">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0"><i class="fa-solid fa-plus-circle me-2 text-primary"></i>Add New Visit</h1>
+        <a href="{% url 'add_visit' %}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-house me-1"></i>Home</a>
+      </div>
+
+      <!-- FORM -->
+      <form method="post" id="multiStepForm">
+        {% csrf_token %}
+        {{ formset.management_form }}
+
+        <!-- STEP 1: Customer Info -->
+        <div class="step" id="step-1">
+          <h5 class="mb-3"><i class="fa-solid fa-user-tie me-2 text-secondary"></i>Step 1: Customer Information</h5>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label>{{ form.company_name.label_tag }}</label>
+              {{ form.company_name }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label>{{ form.contact_person.label_tag }}</label>
+              {{ form.contact_person }}
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label>{{ form.contact_number.label_tag }}</label>
+              {{ form.contact_number }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label>{{ form.designation.label_tag }}</label>
+              {{ form.designation }}
+            </div>
+          </div>
+
+          {{ form.meeting_stage.as_hidden }}
+          {{ form.latitude }} {{ form.longitude }}
+
+          <label class="form-label"><i class="fa-solid fa-map-pin me-1 text-danger"></i>Pin Location</label>
+          <div id="map" style="height: 350px;" class="mb-2 border rounded"></div>
+          <div id="location-details" class="p-2 border rounded small text-muted">Please allow location access…</div>
+
+          <button type="button" class="btn btn-primary next-step mt-3"><i class="fa-solid fa-arrow-right me-1"></i>Next</button>
+        </div>
+
+        <!-- STEP 2: Products Interested + Discussion -->
+        <div class="step d-none" id="step-2">
+          <h5 class="mb-3"><i class="fa-solid fa-industry me-2 text-info"></i>Step 2: Products Interested & Discussion</h5>
+
+          <div class="mb-3">
+            <label>{{ form.item_discussed.label_tag }}</label>
+            {{ form.item_discussed }}
+          </div>
+
+          <h6 class="mt-4"><i class="fa-solid fa-sliders me-1 text-secondary"></i>Products Interested</h6>
+          <div id="production-line-formset">
+            {% for subform in formset %}
+              <div class="border rounded p-3 mb-3 production-line-item">
+                <h6>Product {{ forloop.counter }}</h6>
+                <div class="mb-3">
+                  <label>{{ subform.product_interested.label_tag }}</label>
+                  {{ subform.product_interested }}
+                </div>
+                <button type="button" class="btn btn-sm btn-danger remove-line">
+                  <i class="fa-solid fa-trash fa-lg"></i>
+                </button>
+              </div>
+            {% endfor %}
+          </div>
+
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="add-more-lines">
+            <i class="fa-solid fa-plus me-1"></i> Add Another Product
+          </button>
+
+          <div class="mt-4">
+            <button type="button" class="btn btn-danger prev-step"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>
+            <button type="submit" class="btn btn-success"><i class="fa-solid fa-check me-1"></i>Submit Visit</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Leaflet CSS & JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  let currentStep = 1;
+  const steps = document.querySelectorAll(".step");
+
+  function showStep(step) {
+    steps.forEach((s, i) => s.classList.toggle("d-none", i !== step - 1));
+  }
+
+  showStep(currentStep);
+
+  document.querySelectorAll(".next-step").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (currentStep < steps.length) { currentStep++; showStep(currentStep); }
+    });
+  });
+
+  document.querySelectorAll(".prev-step").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (currentStep > 1) { currentStep--; showStep(currentStep); }
+    });
+  });
+
+  // -------------------------------
+  // FORMSET: Add/Remove Products
+  // -------------------------------
+  const formsetDiv = document.getElementById("production-line-formset");
+  const totalFormsInput = document.getElementById("id_form-TOTAL_FORMS");
+
+  function reindexAndInject(newForm, index) {
+    const formRegex = /form-(\d){1,3}/g;
+    newForm.innerHTML = newForm.innerHTML.replace(formRegex, `form-${index}`);
+  }
+
+  function clearFormFields(formEl) {
+    formEl.querySelectorAll("input, textarea, select").forEach(el => {
+      if (el.tagName === "SELECT") el.selectedIndex = 0;
+      else if (el.type === "checkbox" || el.type === "radio") el.checked = false;
+      else el.value = "";
+    });
+  }
+
+  function addRemoveHandler(row) {
+    row.querySelector(".remove-line")?.addEventListener("click", function () {
+      row.remove(); reindexAllRows();
+    });
+  }
+
+  function reindexAllRows() {
+    const rows = formsetDiv.querySelectorAll(".production-line-item");
+    rows.forEach((row, index) => {
+      reindexAndInject(row, index);
+      const heading = row.querySelector("h6");
+      if (heading) heading.textContent = `Product ${index + 1}`;
+    });
+    totalFormsInput.value = rows.length;
+  }
+
+  function cloneFormsetRow() {
+    const currentCount = parseInt(totalFormsInput.value, 10);
+    const firstFormRow = formsetDiv.querySelector(".production-line-item");
+    if (!firstFormRow) return;
+    const cloned = firstFormRow.cloneNode(true);
+    clearFormFields(cloned);
+    reindexAndInject(cloned, currentCount);
+    cloned.querySelector("h6").textContent = `Product ${currentCount + 1}`;
+    formsetDiv.appendChild(cloned);
+    totalFormsInput.value = currentCount + 1;
+    addRemoveHandler(cloned);
+  }
+
+  document.getElementById("add-more-lines").addEventListener("click", cloneFormsetRow);
+  formsetDiv.querySelectorAll(".production-line-item").forEach(row => addRemoveHandler(row));
+
+  // -------------------------------
+  // GEOLOCATION & MAP
+  // -------------------------------
+  const latInput = document.getElementById("id_latitude");
+  const lonInput = document.getElementById("id_longitude");
+  const locationDetails = document.getElementById("location-details");
+  const submitBtn = document.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(position => {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+      latInput.value = lat.toFixed(6);
+      lonInput.value = lon.toFixed(6);
+      submitBtn.disabled = false;
+
+      const map = L.map('map').setView([lat, lon], 15);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+      L.marker([lat, lon]).addTo(map);
+      locationDetails.textContent = `📍 Lat: ${lat.toFixed(5)}, Lon: ${lon.toFixed(5)}`;
+    }, () => { locationDetails.textContent = "❌ Unable to retrieve location. Please allow location access."; });
+  } else { locationDetails.textContent = "⚠️ Geolocation not supported by your browser."; }
+
+  // -------------------------------
+  // COMPANY → CONTACT AJAX
+  // -------------------------------
+  const urlTemplatesDiv = document.getElementById("url-templates");
+  const getContactsUrlTemplate = urlTemplatesDiv.dataset.getContactsUrl;
+  const getContactDetailsUrlTemplate = urlTemplatesDiv.dataset.getContactDetailsUrl;
+
+  function buildUrl(template, id) {
+    return template.replace(/0\/$/, id + '/');
+  }
+
+  const companySelect = document.getElementById("id_company_name");
+  const contactSelect = document.getElementById("id_contact_person");
+  const contactNumber = document.getElementById("id_contact_number");
+  const designation = document.getElementById("id_designation");
+
+  companySelect.addEventListener("change", () => {
+    const companyId = companySelect.value;
+    if (!companyId) {
+      contactSelect.innerHTML = `<option value="">Select contact</option>`;
+      contactNumber.value = "";
+      designation.value = "";
+      return;
+    }
+    contactSelect.innerHTML = `<option value="">Loading...</option>`;
+    const url = buildUrl(getContactsUrlTemplate, companyId);
+    fetch(url)
+      .then(res => res.ok ? res.json() : Promise.reject("Failed"))
+      .then(data => {
+        contactSelect.innerHTML = `<option value="">Select contact</option>`;
+        data.contacts.forEach(contact => {
+          const opt = document.createElement("option");
+          opt.value = contact.id;
+          opt.textContent = contact.contact_name;
+          contactSelect.appendChild(opt);
+        });
+        contactNumber.value = "";
+        designation.value = "";
+      })
+      .catch(err => {
+        console.error("Error fetching contacts:", err);
+        contactSelect.innerHTML = `<option value="">Error loading contacts</option>`;
+      });
+  });
+
+  contactSelect.addEventListener("change", () => {
+    const contactId = contactSelect.value;
+    if (!contactId) { contactNumber.value = ""; designation.value = ""; return; }
+    fetch(buildUrl(getContactDetailsUrlTemplate, contactId))
+      .then(res => res.ok ? res.json() : Promise.reject("Failed"))
+      .then(data => { contactNumber.value = data.contact_number || ""; designation.value = data.designation || ""; })
+      .catch(() => { contactNumber.value = ""; designation.value = ""; });
+  });
+});
+</script>
+
+
+<style>
+  /* === GENERAL PAGE RESET === */
+  body, .main-panel, .container, .page-inner, form {
+    background: none !important;
+    box-shadow: none !important;
+  }
+
+  /* === TITLES === */
+  h1, h2, h5 {
+    font-weight: 600;
+    color: #222;
+  }
+
+  /* === FORM STYLING === */
+  label {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  select,
+  textarea {
+    width: 100%;
+    background: transparent;
+    border: 2px solid #ccc;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 14px;
+    color: #222;
+    transition: border-color 0.2s ease;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: #007bff;
+    outline: none;
+  }
+
+  /* === BUTTON STYLING === */
+  button, .btn {
+    font-weight: 500;
+    border-radius: 6px;
+    padding: 8px 16px;
+  }
+
+  .btn-outline-primary {
+    border: 2px solid #007bff;
+    background: transparent;
+    color: #007bff;
+  }
+
+  .btn-outline-primary:hover {
+    background: #007bff;
+    color: #fff;
+  }
+
+  .btn-danger, .btn-success {
+    font-weight: 600;
+  }
+
+  /* === MAP STYLING === */
+  #map {
+    height: 220px !important;
+    width: 100%;
+    border: 2px solid #aaa;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+
+  /* === FORMSET BOX === */
+  .production-line-item {
+    background: none !important;
+    border: 2px solid #ccc;
+    border-radius: 6px;
+  }
+
+  /* === LOCATION BOX === */
+  #location-details {
+    background: none;
+    border: 2px dashed #999;
+    font-size: 13px;
+    color: #555;
+  }
+
+  /* === ERROR TEXT === */
+  .text-danger {
+    font-size: 13px;
+  }
+
+  /* === BADGE STYLE (in list view, optional) === */
+  .badge {
+    font-size: 12px;
+    border-radius: 4px;
+  }
+
+  @media (max-width: 767.98px) {
+    h1 {
+      font-size: 1.5rem;
+    }
+
+    /* Step navigation buttons: next/back */
+    .next-step,
+    .prev-step {
+      width: auto; /* make it only as wide as content */
+      display: inline-block; /* avoid full width */
+      margin-bottom: 10px;
+    }
+
+    /* Delete / Submit / Small buttons */
+    .btn-danger,
+    .btn-success,
+    .btn-sm {
+      width: auto;
+      margin-bottom: 5px;
+    }
+
+    .form-label {
+      font-size: 14px;
+    }
+
+    .row > [class*="col-"] {
+      margin-bottom: 15px;
+    }
+}
+
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+
+
+
+{% endblock %}
+
+
+
+
+
+

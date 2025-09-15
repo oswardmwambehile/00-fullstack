@@ -1,0 +1,19 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Accounts{% endblock %}</title>
+  <link rel="apple-touch-icon" sizes="76x76" href="{% static 'auth/img/apple-icon.png' %}">
+  <link rel="icon" type="image/png" href="{% static 'auth/img/favicon.png' %}">
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet">
+  <link href="{% static 'auth/css/nucleo-icons.css' %}" rel="stylesheet">
+  <link href="{% static 'auth/css/nucleo-svg.css' %}" rel="stylesheet">
+  <link href="{% static 'auth/css/soft-ui-dashboard.css' %}" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/42d5adcbca.js" crossorigin="anonymous"></script>
+</head>
+<body class="g-sidenav-show bg-gray-100">
+  {% block content %}{% endblock %}
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

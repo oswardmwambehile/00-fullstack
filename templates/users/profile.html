@@ -1,0 +1,135 @@
+{% extends "users/base.html" %}
+{% load static %}
+
+{% block content %}
+  {% include "users/sidebar.html" %}
+  <div class="main-panel">
+    <div class="main-header">
+      <div class="main-header-logo">
+        <div class="logo-header" data-background-color="dark">
+          <a href="index.html" class="logo">
+            <img src="{% static 'assets/img/kaiadmin/logo_light.svg' %}" alt="navbar brand" class="navbar-brand" height="20" />
+          </a>
+          <div class="nav-toggle">
+            <button class="btn btn-toggle toggle-sidebar"><i class="gg-menu-right"></i></button>
+            <button class="btn btn-toggle sidenav-toggler"><i class="gg-menu-left"></i></button>
+          </div>
+          <button class="topbar-toggler more"><i class="gg-more-vertical-alt"></i></button>
+        </div>
+      </div>
+      {% include "users/nav.html" %}
+    </div>
+
+    <div class="container">
+      <div class="page-inner d-flex justify-content-center align-items-center py-5">
+        <!-- Profile Card with Animated Border -->
+        <div class="profile-card animated-border">
+          <!-- Avatar -->
+          <div class="avatar">
+            {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
+          </div>
+
+          <!-- Name & Position -->
+          <div class="text-center mt-3">
+            <h2 class="fw-bold text-dark mb-1">{{ user.get_full_name|default:"User" }}</h2>
+            <p class="text-muted"><i class="fas fa-briefcase me-1 text-primary"></i>{{ user.position|default:"-" }}</p>
+          </div>
+
+          <hr class="my-3">
+
+          <!-- Info with Icons -->
+          <div class="px-3">
+            <ul class="list-unstyled">
+              <li class="info-item"><i class="fas fa-envelope text-primary me-2"></i> {{ user.email }}</li>
+              <li class="info-item"><i class="fas fa-map-marker-alt text-danger me-2"></i> Zone: {{ user.zone }}</li>
+              <li class="info-item"><i class="fas fa-code-branch text-success me-2"></i> Branch: {{ user.branch }}</li>
+              <li class="info-item"><i class="fas fa-phone text-warning me-2"></i> Contact: {{ user.contact }}</li>
+              <li class="info-item"><i class="fas fa-calendar-alt text-info me-2"></i> Joined: {{ user.date_joined|date:"F j, Y" }}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Styles -->
+  <style>
+    body, .main-panel, .page-inner, .container {
+      background: linear-gradient(to right, #f0f2f5, #ffffff);
+    }
+
+    .profile-card {
+      background-color: #fff;
+      border-radius: 20px;
+      padding: 2.5rem 1.5rem;
+      max-width: 500px;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .animated-border::before {
+      content: '';
+      position: absolute;
+      z-index: -1;
+      top: -3px;
+      left: -3px;
+      right: -3px;
+      bottom: -3px;
+      background: linear-gradient(45deg, #ff4e50, #fc913a, #f9d423, #ede574, #e1f5c4, #00c9ff, #92fe9d);
+      background-size: 400% 400%;
+      border-radius: 22px;
+      animation: gradientBorder 10s ease infinite;
+    }
+
+    @keyframes gradientBorder {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background-color: #007bff;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      font-weight: 700;
+      margin: 0 auto 15px auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .info-item {
+      text-align: left;
+      margin-bottom: 12px;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .info-item i {
+      width: 20px;
+    }
+
+    @media (max-width: 576px) {
+      .profile-card {
+        padding: 2rem 1rem;
+      }
+
+      .avatar {
+        width: 75px;
+        height: 75px;
+        font-size: 28px;
+      }
+    }
+  </style>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+{% endblock %}
