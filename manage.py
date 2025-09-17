@@ -2,7 +2,18 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+import logging
 
+# -------------------------
+# Ignore Broken pipe messages
+# -------------------------
+class IgnoreBrokenPipe(logging.Filter):
+    def filter(self, record):
+        return "Broken pipe" not in record.getMessage()
+
+logging.getLogger("django.server").addFilter(IgnoreBrokenPipe())
+logging.getLogger("django.request").addFilter(IgnoreBrokenPipe())
+# -------------------------
 
 def main():
     """Run administrative tasks."""

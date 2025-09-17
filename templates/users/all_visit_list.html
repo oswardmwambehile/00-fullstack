@@ -72,7 +72,7 @@
                     <span class="badge 
                       {% if v.status == 'Open' %}bg-info
                       {% elif v.status == 'Won' %}bg-success
-                      {% elif v.status == 'Closed' %}bg-secondary
+                      {% elif v.status == 'Won Pending Payment' %}bg-secondary
                       {% elif v.status == 'Lost' %}bg-danger
                       {% else %}bg-light text-dark{% endif %}">
                       {{ v.status }}

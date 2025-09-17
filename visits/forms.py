@@ -100,63 +100,99 @@ ProductInterestedFormSet = modelformset_factory(
 
 # --------------------------
 # Update Visit Form (Stage Dependent)
-# --------------------------
+from decimal import Decimal, ROUND_HALF_UP
+from django import forms
+from django.core.exceptions import ValidationError
+from .models import NewVisit, ProductInterested
+
+from decimal import Decimal, ROUND_HALF_UP
+from django import forms
+from django.core.exceptions import ValidationError
+from django.forms import modelformset_factory
+from .models import NewVisit, ProductInterested, Customer, CustomerContact
+from django import forms
+from .models import NewVisit, CustomerContact, Customer
+
+from decimal import Decimal, ROUND_HALF_UP
+from django import forms
+from django.core.exceptions import ValidationError
+from django.forms import modelformset_factory
+from .models import NewVisit, ProductInterested, Customer, CustomerContact
+
+
 class UpdateVisitForm(forms.ModelForm):
     class Meta:
         model = NewVisit
         exclude = ["added_by", "created_at", "updated_at"]
         widgets = {
-            "company_name": forms.Select(attrs={"class": "form-select"}),
+            "company_name": forms.Select(attrs={"class": "form-select", "readonly": "readonly", "disabled": True}),
             "contact_person": forms.Select(attrs={"class": "form-select"}),
             "contact_number": forms.TextInput(attrs={"class": "form-control"}),
             "designation": forms.TextInput(attrs={"class": "form-control"}),
-            "latitude": forms.HiddenInput(attrs={"id": "id_latitude"}),
-            "longitude": forms.HiddenInput(attrs={"id": "id_longitude"}),
-            "meeting_stage": forms.Select(attrs={"class": "form-select"}),
-            "status": forms.Select(attrs={"class": "form-select"}),
-            "tag": forms.Select(attrs={"class": "form-select"}),
             "item_discussed": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+            "latitude": forms.HiddenInput(),
+            "longitude": forms.HiddenInput(),
+            "meeting_stage": forms.Select(attrs={"class": "form-select"}),
             "client_budget": forms.NumberInput(attrs={"class": "form-control"}),
             "is_order_final": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "contract_outcome": forms.Select(attrs={"class": "form-select"}),
             "contract_amount": forms.NumberInput(attrs={"class": "form-control"}),
             "reason_lost": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
-            "is_payment_collected": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "is_payment_collected": forms.Select(attrs={"class": "form-select"}),
         }
 
-    def __init__(self, *args, stage=None, **kwargs):
+    def __init__(self, *args, **kwargs):
+        stage = kwargs.pop("stage", None)
         super().__init__(*args, **kwargs)
 
+        # ----------------------------
+        # Filter contact_person to only show contacts of the selected company
+        # ----------------------------
+        company = getattr(self.instance, "company_name", None)
+        if company:
+            self.fields["contact_person"].queryset = CustomerContact.objects.filter(customer=company).order_by("contact_name")
+        else:
+            self.fields["contact_person"].queryset = CustomerContact.objects.none()
+
+        # Pre-fill contact_number and designation from NewVisit instance
+        contact = getattr(self.instance, "contact_person", None)
+        if contact:
+            self.fields["contact_number"].initial = self.instance.contact_number or ""
+            self.fields["designation"].initial = self.instance.designation or ""
+        else:
+            self.fields["contact_number"].initial = ""
+            self.fields["designation"].initial = ""
+
+        # ----------------------------
         # Stage-dependent logic
+        # ----------------------------
         for f in ("is_order_final", "contract_outcome", "contract_amount", "reason_lost", "is_payment_collected"):
             if f in self.fields:
                 self.fields[f].required = False
-                self.fields[f].widget.attrs.pop("hidden", None)
 
-        # Proposal / Negotiation
         if stage == "Proposal or Negotiation":
             self.fields["is_order_final"].widget = forms.CheckboxInput(attrs={"class": "form-check-input"})
 
-        # Closing
         elif stage == "Closing":
-            self.fields["contract_outcome"].widget = forms.Select(attrs={"class": "form-select"})
-            self.fields["contract_outcome"].choices = [("Won", "Won"), ("Lost", "Lost")]
             self.fields["contract_outcome"].required = True
+            self.fields["contract_outcome"].choices = [("Won", "Won"), ("Lost", "Lost")]
 
-            if self.instance.contract_outcome == "Won":
+            contract_outcome = getattr(self.instance, "contract_outcome", None)
+            if contract_outcome == "Won":
                 self.fields["contract_amount"].widget = forms.NumberInput(attrs={"class": "form-control"})
-                self.fields["is_payment_collected"].widget = forms.CheckboxInput(attrs={"class": "form-check-input"})
-            elif self.instance.contract_outcome == "Lost":
+                self.fields["is_payment_collected"].widget = forms.Select(
+                    choices=[("", "Select Payment"), ("Yes-Full", "Yes-Full"), ("Yes-Partial", "Yes-Partial"), ("No", "No")],
+                    attrs={"class": "form-select"}
+                )
+            elif contract_outcome == "Lost":
                 self.fields["reason_lost"].widget = forms.Textarea(attrs={"class": "form-control", "rows": 2})
+                self.fields["is_payment_collected"].widget = forms.HiddenInput()
 
-        # Payment Followup (optional)
         elif stage == "Payment Followup":
-            self.fields["is_payment_collected"].widget = forms.CheckboxInput(attrs={"class": "form-check-input"})
+            self.fields["is_payment_collected"].widget = forms.HiddenInput()
 
 
-# --------------------------
-# Update Product Interested Form
-# --------------------------
+
 class UpdateProductInterestedForm(forms.ModelForm):
     class Meta:
         model = ProductInterested
@@ -165,41 +201,25 @@ class UpdateProductInterestedForm(forms.ModelForm):
             "product_interested": forms.Select(attrs={"class": "form-select"}),
             "order_estimate": forms.NumberInput(attrs={"class": "form-control field-order_estimate"}),
             "final_order_amount": forms.NumberInput(attrs={"class": "form-control field-final_order_amount"}),
-            "payment_collected": forms.NumberInput(attrs={"class": "form-control field-payment_collected"}),  # ✅ always NumberInput
+            "payment_collected": forms.NumberInput(attrs={"class": "form-control field-payment_collected"}),
         }
 
     def __init__(self, *args, stage=None, contract_outcome=None, **kwargs):
         super().__init__(*args, **kwargs)
-
         for f in ("order_estimate", "final_order_amount", "payment_collected"):
             if f in self.fields:
                 self.fields[f].required = False
 
         if stage == "Proposal or Negotiation":
-            if "order_estimate" in self.fields:
-                self.fields["order_estimate"].required = True
-
+            if "order_estimate" in self.fields: self.fields["order_estimate"].required = True
         elif stage == "Closing":
             if contract_outcome == "Won":
-                if "final_order_amount" in self.fields:
-                    self.fields["final_order_amount"].required = True
-                # ❌ Do NOT touch payment_collected here; hide it via JS instead
-                if "payment_collected" in self.fields:
-                    self.fields["payment_collected"].widget = forms.NumberInput(
-                        attrs={"class": "form-control field-payment_collected"}
-                    )
+                if "final_order_amount" in self.fields: self.fields["final_order_amount"].required = True
             elif contract_outcome == "Lost":
-                if "final_order_amount" in self.fields:
-                    self.fields["final_order_amount"].widget = forms.HiddenInput()
-                if "payment_collected" in self.fields:
-                    self.fields["payment_collected"].widget = forms.HiddenInput()
-
+                if "final_order_amount" in self.fields: self.fields["final_order_amount"].widget = forms.HiddenInput()
+                if "payment_collected" in self.fields: self.fields["payment_collected"].widget = forms.HiddenInput()
         elif stage == "Payment Followup":
-            if "payment_collected" in self.fields:
-                self.fields["payment_collected"].required = True
-                self.fields["payment_collected"].widget = forms.NumberInput(
-                    attrs={"class": "form-control field-payment_collected"}
-                )
+            if "payment_collected" in self.fields: self.fields["payment_collected"].required = True
 
 
 UpdateProductInterestedFormSet = modelformset_factory(

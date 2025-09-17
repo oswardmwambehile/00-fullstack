@@ -50,6 +50,7 @@
                 <th><i class="fas fa-id-badge"></i> Designation</th>
                 <th><i class="fas fa-map-marker-alt"></i> Location</th>
                 <th><i class="fas fa-envelope"></i> Email</th>
+                <th><i class="fas fa-tags"></i> Tag</th> <!-- Added Tag column -->
                 <th><i class="fas fa-cogs"></i> Actions</th>
               </tr>
             </thead>
@@ -62,7 +63,20 @@
                 <td>{{ customer.location|default:"-" }}</td>
                 <td>{{ customer.email|default:"-" }}</td>
                 <td>
-                  <a href="{%url 'views_customer' customer.id %}" class="btn btn-sm btn-outline-info" title="View">
+                  {% if customer.latest_tag %}
+                    <span class="badge 
+                      {% if customer.latest_tag == 'Prospect' %}bg-primary
+                      {% elif customer.latest_tag == 'Lead' %}bg-warning
+                      {% elif customer.latest_tag == 'Customer' %}bg-success
+                      {% endif %}">
+                      {{ customer.latest_tag }}
+                    </span>
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+                <td>
+                  <a href="{% url 'views_customer' customer.id %}" class="btn btn-sm btn-outline-info" title="View">
                     <i class="fas fa-eye"></i>
                   </a>
                   <a href="{% url 'updates_customer' customer.id %}" class="btn btn-sm btn-outline-primary" title="Edit">
@@ -75,7 +89,7 @@
               </tr>
               {% empty %}
               <tr>
-                <td colspan="6" class="text-center"><i class="fas fa-info-circle"></i> No customers found.</td>
+                <td colspan="7" class="text-center"><i class="fas fa-info-circle"></i> No customers found.</td>
               </tr>
               {% endfor %}
             </tbody>

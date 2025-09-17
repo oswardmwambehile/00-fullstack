@@ -137,6 +137,12 @@ class NewVisit(models.Model):
         ("Lost", "Lost"),
     ]
 
+    PAYMENT_CHOICES = [
+        ("Yes-Full", "Yes-Full"),
+        ("Yes-Partial", "Yes-Partial"),
+        ("No", "No"),
+    ]
+
     company_name = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="visits", null=True, blank=True)
     contact_person = models.ForeignKey(CustomerContact, on_delete=models.CASCADE, related_name="visits", null=True, blank=True)
     contact_number = models.CharField(max_length=255, blank=True, null=True)
@@ -146,7 +152,7 @@ class NewVisit(models.Model):
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 
     meeting_stage = models.CharField(max_length=50, choices=MEETING_STAGE_CHOICES, default="Prospecting")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Open", blank=True, null=True)
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default="Open", blank=True, null=True)
     tag = models.CharField(max_length=20, choices=TAG_CHOICES, default="Prospect", null=True, blank=True)
 
     item_discussed = models.TextField(max_length=255)
@@ -155,7 +161,14 @@ class NewVisit(models.Model):
     contract_outcome = models.CharField(max_length=10, choices=[("Won", "Won"), ("Lost", "Lost")], null=True, blank=True)
     contract_amount = models.DecimalField(max_digits=19, decimal_places=2, null=True, blank=True)
     reason_lost = models.TextField(null=True, blank=True)
-    is_payment_collected = models.BooleanField(null=True, blank=True)
+
+    # ✅ New Choice Field for Payment
+    is_payment_collected = models.CharField(
+        max_length=20,
+        choices=PAYMENT_CHOICES,
+        null=True,
+        blank=True,
+    )
 
     added_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -165,18 +178,28 @@ class NewVisit(models.Model):
         if self.meeting_stage == "Prospecting":
             self.status = "Open"
             self.tag = "Prospect"
+
         elif self.meeting_stage == "Qualifying":
             self.status = "Open"
             self.tag = "Lead"
+
         elif self.meeting_stage == "Proposal or Negotiation":
             self.status = "Open"
             self.tag = "Lead"
+
         elif self.meeting_stage == "Closing":
             if self.contract_outcome == "Won":
                 self.tag = "Customer"
-                total_payment = sum(p.payment_collected or 0 for p in self.products.all())
-                total_order = sum(p.final_order_amount or 0 for p in self.products.all())
-                self.status = "Won Paid" if total_payment >= total_order and total_order > 0 else "Won Pending Payment"
+
+                if self.is_payment_collected == "Yes-Full":
+                    self.status = "Won Paid"
+
+                elif self.is_payment_collected == "Yes-Partial":
+                    self.status = "Won Pending Payment"
+
+                elif self.is_payment_collected == "No":
+                    self.status = None  # ⬅️ No status if payment not collected
+
             elif self.contract_outcome == "Lost":
                 self.tag = None
                 self.status = "Lost"
@@ -207,5 +230,4 @@ class ProductInterested(models.Model):
     payment_collected = models.DecimalField(max_digits=19, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
-        # ✅ Correct method for choice display
         return f"{self.visit} - {self.get_product_interested_display()}"

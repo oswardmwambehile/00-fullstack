@@ -536,28 +536,21 @@ def adminprofile_view(request):
     return render(request, 'company/profile.html', {'user': user})
 
 
-
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
-from .forms import UpdateVisitForm, UpdateProductInterestedFormSet
-from .models import NewVisit
-
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.forms import modelformset_factory
+from django.http import JsonResponse
 from .forms import UpdateVisitForm, UpdateProductInterestedForm
 from .models import NewVisit, ProductInterested
-
+from customer.models import CustomerContact
 
 @login_required
 def update_visit(request, visit_id):
     visit = get_object_or_404(NewVisit, id=visit_id)
 
-    # Determine current stage and contract outcome
     stage = request.POST.get("meeting_stage") or visit.meeting_stage
     contract_outcome = request.POST.get("contract_outcome") or visit.contract_outcome
 
-    # Formset factory: add an extra blank form if no products exist
     extra_forms = 1 if request.method == "GET" and visit.products.count() == 0 else 0
     ProductFormSet = modelformset_factory(
         ProductInterested,
@@ -567,10 +560,7 @@ def update_visit(request, visit_id):
     )
 
     if request.method == "POST":
-        # Visit form with current stage
         visit_form = UpdateVisitForm(request.POST, instance=visit, stage=stage)
-
-        # Product formset with stage & contract outcome
         formset = ProductFormSet(
             request.POST,
             queryset=visit.products.all(),
@@ -579,36 +569,24 @@ def update_visit(request, visit_id):
         )
 
         if visit_form.is_valid() and formset.is_valid():
-            # Save visit
             visit = visit_form.save(commit=False)
+
+            # ✅ Enforce original company (field is disabled, so form won't send it)
+            visit.company_name = NewVisit.objects.get(id=visit.id).company_name
+
             visit.meeting_stage = stage
             visit.contract_outcome = contract_outcome
-
-            # Ensure Booleans are not None
-            if stage == "Proposal or Negotiation" and visit.is_order_final is None:
-                visit.is_order_final = False
-            if stage == "Closing" and visit.is_payment_collected is None:
-                visit.is_payment_collected = False
-
             visit.save()
 
-            # Save products
             for form in formset:
                 if form.cleaned_data.get("DELETE") and form.instance.pk:
                     form.instance.delete()
                     continue
-
                 product = form.save(commit=False)
                 product.visit = visit
-
-                # Ensure numeric fields are 0 if empty (avoids null issues)
-                if product.order_estimate is None:
-                    product.order_estimate = 0
-                if product.final_order_amount is None:
-                    product.final_order_amount = 0
-                if product.payment_collected is None:
-                    product.payment_collected = 0
-
+                for f in ["order_estimate", "final_order_amount", "payment_collected"]:
+                    if getattr(product, f) is None:
+                        setattr(product, f, 0)
                 product.save()
 
             return redirect("visit_detail", visit_id=visit.id)
@@ -621,8 +599,53 @@ def update_visit(request, visit_id):
             prefix="product"
         )
 
+    # Pre-fill contact number and designation
+    if visit.contact_person:
+        visit_form.fields["contact_number"].initial = visit.contact_person.contact_detail or ""
+        visit_form.fields["designation"].initial = visit.contact_person.customer.designation or ""
+
     return render(request, "users/update_visit.html", {
         "form": visit_form,
         "formset": formset,
         "visit": visit,
+    })
+
+
+# views.py
+@login_required
+def get_contact_details_update(request, contact_id):
+    """
+    Fetch contact details for update visit form dynamically.
+    """
+    try:
+        contact = CustomerContact.objects.get(pk=contact_id)
+        data = {
+            "contact_number": contact.contact_detail or "",
+            "designation": contact.customer.designation or "",
+        }
+        return JsonResponse(data)
+    except CustomerContact.DoesNotExist:
+        return JsonResponse({"contact_number": "", "designation": ""})
+
+
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .models import NewVisit
+
+@login_required
+def visit_history(request, visit_id):
+    current_visit = get_object_or_404(NewVisit, id=visit_id)
+    company = current_visit.company_name
+
+    visits_by_stage = {
+        "Prospecting": NewVisit.objects.filter(meeting_stage="Prospecting", company_name=company).order_by("-created_at"),
+        "Qualifying": NewVisit.objects.filter(meeting_stage="Qualifying", company_name=company).order_by("-created_at"),
+        "Proposal_or_Negotiation": NewVisit.objects.filter(meeting_stage="Proposal or Negotiation", company_name=company).order_by("-created_at"),
+        "Closing": NewVisit.objects.filter(meeting_stage="Closing", company_name=company).order_by("-created_at"),
+        "Payment_Followup": NewVisit.objects.filter(meeting_stage="Payment Followup", company_name=company).order_by("-created_at"),
+    }
+
+    return render(request, "users/visit_history.html", {
+        "current_visit": current_visit,
+        "visits_by_stage": visits_by_stage,
     })

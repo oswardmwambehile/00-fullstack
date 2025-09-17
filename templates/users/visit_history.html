@@ -1,0 +1,122 @@
+{% extends "users/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+{% include "users/sidebar.html" %}
+
+<div class="main-panel">
+  <div class="main-header">{% include "users/nav.html" %}</div>
+  <div class="container">
+    <div class="page-inner">
+      <h3 class="mb-4">
+        <i class="fas fa-history text-primary me-2"></i>
+        Visit History for {{ current_visit.company_name }}
+      </h3>
+
+      {% for stage, visits in visits_by_stage.items %}
+      <div class="card mb-4">
+        <div class="card-header bg-light"><strong>{{ stage }}</strong></div>
+        <div class="card-body">
+          {% if visits %}
+            {% for visit in visits %}
+              <p><strong>Contact Person:</strong> {{ visit.contact_person }}</p>
+              <p><strong>Contact Number:</strong> {{ visit.contact_number }}</p>
+              <p><strong>Designation:</strong> {{ visit.designation }}</p>
+              {% if visit.item_discussed %}
+                <p><strong>Item Discussed:</strong> {{ visit.item_discussed }}</p>
+              {% endif %}
+              {% if visit.client_budget %}
+                <p><strong>Client Budget:</strong> {{ visit.client_budget|floatformat:2|intcomma }}</p>
+              {% endif %}
+
+              {% if stage == "Closing" %}
+                {% if visit.contract_outcome %}
+                  <p><strong>Contract Outcome:</strong>
+                    <span class="badge 
+                      {% if visit.contract_outcome == 'Won' %}bg-success
+                      {% elif visit.contract_outcome == 'Lost' %}bg-danger
+                      {% else %}bg-warning text-dark{% endif %}">
+                      {{ visit.contract_outcome }}
+                    </span>
+                  </p>
+                {% endif %}
+                {% if visit.contract_amount %}
+                  <p><strong>Contract Amount:</strong> {{ visit.contract_amount|floatformat:2|intcomma }}</p>
+                {% endif %}
+                {% if visit.reason_lost %}
+                  <p><strong>Reason Lost:</strong> {{ visit.reason_lost }}</p>
+                {% endif %}
+              {% endif %}
+
+              {% if visit.products.exists %}
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped">
+                    <thead>
+                      <tr>
+                        <th>Product</th>
+                        {% if stage == "Proposal or Negotiation" %}
+                          <th>Order Estimate</th>
+                        {% elif stage == "Closing" %}
+                          <th>Final Order Amount</th>
+                          <th>Payment Collected</th>
+                        {% elif stage == "Payment Followup" %}
+                          <th>Payment Collected</th>
+                        {% endif %}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for product in visit.products.all %}
+                      <tr>
+                        <td>{{ product.get_product_interested_display }}</td>
+                        {% if stage == "Proposal or Negotiation" %}
+                          <td>{{ product.order_estimate|default:"-"|intcomma }}</td>
+                        {% elif stage == "Closing" %}
+                          <td>{{ product.final_order_amount|default:"-"|intcomma }}</td>
+                          <td>
+                            {% if product.payment_collected %}
+                              <span class="badge bg-success">Yes ({{ product.payment_collected|floatformat:2|intcomma }})</span>
+                            {% else %}
+                              <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                          </td>
+                        {% elif stage == "Payment Followup" %}
+                          <td>
+                            {% if product.payment_collected %}
+                              <span class="badge bg-success">{{ product.payment_collected|floatformat:2|intcomma }}</span>
+                            {% else %}
+                              <span class="badge bg-secondary">Not Collected</span>
+                            {% endif %}
+                          </td>
+                        {% endif %}
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% endif %}
+
+              <hr>
+            {% endfor %}
+          {% else %}
+            <p>No visits yet for this stage.</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+
+      <!-- Back Button -->
+      <a href="{% url 'all_visit_list' %}" class="btn btn-secondary mb-4">
+        <i class="fas fa-arrow-left me-1"></i> Back to Visits
+      </a>
+    </div>
+  </div>
+</div>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<style>
+  .badge { font-size: 0.9rem; padding: 0.4em 0.6em; border-radius: 0.35rem; }
+  table th, table td { vertical-align: middle !important; }
+</style>
+{% endblock %}

@@ -19,4 +19,12 @@ urlpatterns = [
     path('all_visits/', views.all_visit_list, name='all_visit_list'),# You can replace 'index' with a home view too
     path("get-contacts/<int:company_id>/", views.get_contacts, name="get_contacts"),
     path("get-contact-details/<int:contact_id>/", views.get_contact_details, name="get_contact_details"),
+   # urls.py
+path(
+    "get-contact-details-update/<int:contact_id>/",
+    views.get_contact_details_update,
+    name="get_contact_details_update"
+),
+ path('visit-history/<int:visit_id>/history/', views.visit_history, name='visit_history'),
+
 ]

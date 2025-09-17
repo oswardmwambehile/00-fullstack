@@ -137,7 +137,7 @@
             {% endfor %}
           </div>
 
-          <button type="button" id="add-more-lines" class="btn btn-secondary mb-3">Add Product</button>
+          
           <button type="submit" class="btn btn-primary">Save Visit</button>
         </form>
       </div>
@@ -156,50 +156,44 @@
 <!-- Leaflet CSS/JS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
-  function wrapperForField(el){ 
-    return el ? (el.closest('.mb-3') || el.parentElement) : null; 
-  }
+  function wrapperForField(el){ return el ? (el.closest('.mb-3') || el.parentElement) : null; }
+  function showField(el, show=true){ if(!el) return; const wrapper = wrapperForField(el); if(!wrapper) return; if(show){ wrapper.classList.remove('d-none'); el.disabled=false; } else { wrapper.classList.add('d-none'); el.disabled=false; } }
 
-  function showField(el, show=true){ 
-    if(!el) return; 
-    const wrapper = wrapperForField(el); 
-    if(!wrapper) return; 
-    if(show){ wrapper.classList.remove('d-none'); el.disabled=false; } 
-    else { wrapper.classList.add('d-none'); el.disabled=false; }
-  }
-
+  // Product row visibility based on stage & outcome
   function toggleProductRowFields(row, stage, outcome){
     const orderEstimate = row.querySelector('[name$="order_estimate"]');
     const finalOrder = row.querySelector('[name$="final_order_amount"]');
     const paymentCollected = row.querySelector('[name$="payment_collected"]');
+    const deleteBtn = row.querySelector('.remove-line');
+    const deleteCheckbox = row.querySelector('[name$="-DELETE"]');
 
     showField(orderEstimate,false);
     showField(finalOrder,false);
     showField(paymentCollected,false);
 
-    if(stage === "Proposal or Negotiation"){
-      showField(orderEstimate,true); 
-    } else if(stage === "Closing"){
-      if(outcome==="Won"){
-        showField(finalOrder,true);
-        showField(paymentCollected,false);
-      }
-      if(outcome==="Lost"){
-        showField(finalOrder,false);
-        showField(paymentCollected,false);
-      }
-    } else if(stage==="Payment Followup"){
-      showField(paymentCollected,true);
+    if(deleteBtn) deleteBtn.style.display = 'none';
+    if(deleteCheckbox) deleteCheckbox.closest('.mb-3').style.display = 'none';
+
+    if(stage === "Proposal or Negotiation"){ showField(orderEstimate,true); }
+    else if(stage === "Closing"){
+      if(outcome==="Won"){ showField(finalOrder,true); showField(paymentCollected,false); }
+      if(outcome==="Lost"){ showField(finalOrder,false); showField(paymentCollected,false); }
     }
+    else if(stage==="Payment Followup"){ showField(finalOrder,true); showField(paymentCollected,true); }
   }
 
   function applyStageToAllRows(stage,outcome){
-    document.querySelectorAll(".production-line-item").forEach(row=>{
-      toggleProductRowFields(row,stage,outcome);
-    });
+    const formsetDiv = document.getElementById("production-line-formset");
+    const addBtn = document.getElementById("add-more-lines");
+    if(addBtn) addBtn.style.display = 'none';
+    if(outcome === "Lost"){ if(formsetDiv) formsetDiv.style.display = "none"; } 
+    else { if(formsetDiv) formsetDiv.style.display = "block"; }
+
+    document.querySelectorAll(".production-line-item").forEach(row=>{ toggleProductRowFields(row,stage,outcome); });
 
     const clientBudget = document.querySelector('[name="client_budget"]');
     const contractOutcome = document.querySelector('[name="contract_outcome"]');
@@ -208,254 +202,126 @@ document.addEventListener("DOMContentLoaded", function () {
     const isOrderFinal = document.querySelector('[name="is_order_final"]');
     const isPaymentCollectedGlobal = document.querySelector('[name="is_payment_collected"]');
 
-    [clientBudget, contractOutcome, contractAmount, reasonLost, isOrderFinal, isPaymentCollectedGlobal].forEach(el=>{
-      if(el) showField(el,false);
-    });
+    [clientBudget, contractOutcome, contractAmount, reasonLost, isOrderFinal, isPaymentCollectedGlobal].forEach(el=>{ if(el) showField(el,false); });
 
     if(stage==="Qualifying" && clientBudget) showField(clientBudget,true);
     if(stage==="Proposal or Negotiation" && isOrderFinal) showField(isOrderFinal,true);
-
     if(stage==="Closing" && contractOutcome){
       showField(contractOutcome,true);
       if(outcome==="Won" && contractAmount) showField(contractAmount,true);
+      if(outcome==="Won" && isPaymentCollectedGlobal) showField(isPaymentCollectedGlobal,true);
       if(outcome==="Lost" && reasonLost) showField(reasonLost,true);
     }
-
     if(stage==="Payment Followup" && isPaymentCollectedGlobal){
-      showField(isPaymentCollectedGlobal,true);
-      document.querySelectorAll(".production-line-item").forEach(row=>{
-        toggleProductRowFields(row,stage,outcome);
-      });
+      showField(isPaymentCollectedGlobal,false);
+      document.querySelectorAll(".production-line-item").forEach(row=>{ toggleProductRowFields(row,stage,outcome); });
     }
   }
 
   const stageSelect = document.querySelector('[name="meeting_stage"]');
   const outcomeSelect = document.querySelector('[name="contract_outcome"]');
 
-  function refreshStageOutcome(){
-    applyStageToAllRows(stageSelect?.value,outcomeSelect?.value);
-  }
-
+  function refreshStageOutcome(){ applyStageToAllRows(stageSelect?.value,outcomeSelect?.value); }
   stageSelect?.addEventListener('change',refreshStageOutcome);
   outcomeSelect?.addEventListener('change',refreshStageOutcome);
   refreshStageOutcome();
 
-  const formsetDiv = document.getElementById("production-line-formset");
-
-  document.getElementById("add-more-lines")?.addEventListener('click',()=>{
-    setTimeout(()=>{
-      const stage = stageSelect?.value;
-      const outcome = outcomeSelect?.value;
-      const lastRow = formsetDiv.querySelector(".production-line-item:last-child");
-      if(lastRow) toggleProductRowFields(lastRow,stage,outcome);
-      formsetDiv.querySelectorAll(".remove-line").forEach(btn=>{
-        btn.onclick=()=>btn.closest(".production-line-item").remove();
-      });
-    },50);
-  });
-
-  formsetDiv.querySelectorAll(".remove-line").forEach(btn=>{
-    btn.onclick=()=>btn.closest(".production-line-item").remove();
-  });
-
+  // Map
   const latInput = document.getElementById("id_latitude");
   const lonInput = document.getElementById("id_longitude");
   const locationDetails = document.getElementById("location-details");
   let map, marker;
-
   function initMapAt(lat,lon,zoom=15){
-    if(!map){
-      map = L.map('map').setView([lat,lon],zoom);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
-      map.on('click',e=>setMarker(e.latlng.lat,e.latlng.lng));
-    } else map.setView([lat,lon],zoom);
+    if(!map){ map = L.map('map').setView([lat,lon],zoom); L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:'&copy; OpenStreetMap contributors'}).addTo(map); map.on('click',e=>setMarker(e.latlng.lat,e.latlng.lng)); }
+    else map.setView([lat,lon],zoom);
     setMarker(lat,lon);
   }
-
   function setMarker(lat,lon){
     if(marker) marker.setLatLng([lat,lon]);
-    else{
-      marker=L.marker([lat,lon],{draggable:true}).addTo(map);
-      marker.on('dragend',e=>{ const pos=e.target.getLatLng(); updateLatLonInputs(pos.lat,pos.lng); });
-    }
+    else{ marker=L.marker([lat,lon],{draggable:true}).addTo(map); marker.on('dragend',e=>{ const pos=e.target.getLatLng(); updateLatLonInputs(pos.lat,pos.lng); }); }
     updateLatLonInputs(lat,lon);
   }
+  function updateLatLonInputs(lat,lon){ if(latInput) latInput.value=lat.toFixed(6); if(lonInput) lonInput.value=lon.toFixed(6); if(locationDetails) locationDetails.textContent=`📍 Lat: ${lat.toFixed(5)}, Lon: ${lon.toFixed(5)}`; }
+  if(latInput && latInput.value && lonInput && lonInput.value){ initMapAt(parseFloat(latInput.value),parseFloat(lonInput.value)); } 
+  else if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(pos=>initMapAt(pos.coords.latitude,pos.coords.longitude), ()=>{ locationDetails.textContent="❌ Unable to retrieve location"; initMapAt(0,0,2); }); } 
+  else { initMapAt(0,0,2); }
 
-  function updateLatLonInputs(lat,lon){
-    if(latInput) latInput.value=lat.toFixed(6);
-    if(lonInput) lonInput.value=lon.toFixed(6);
-    if(locationDetails) locationDetails.textContent=`📍 Lat: ${lat.toFixed(5)}, Lon: ${lon.toFixed(5)}`;
+  // Company / Contact auto-fill
+  const companySelect = document.getElementById("id_company_name");
+  const contactSelect = document.getElementById("id_contact_person");
+  const contactNumber = document.getElementById("id_contact_number");
+  const designation = document.getElementById("id_designation");
+
+  // --- Make company readonly ---
+  if(companySelect){
+    companySelect.disabled = true;  // User cannot change the company
   }
 
-  if(latInput && latInput.value && lonInput && lonInput.value){
-    initMapAt(parseFloat(latInput.value),parseFloat(lonInput.value));
-  } else if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(
-      pos=>initMapAt(pos.coords.latitude,pos.coords.longitude),
-      ()=>{ locationDetails.textContent="❌ Unable to retrieve location"; initMapAt(0,0,2); }
-    );
-  } else {
-    initMapAt(0,0,2);
-  }
+  // --- Update contact number & designation dynamically ---
+  contactSelect?.addEventListener('change', function(){
+      const contactId = this.value;
+      if(contactId){ 
+          fetch(`/get-contact-details-update/${contactId}/`)  // ✅ updated URL for update
+              .then(res => res.json())
+              .then(data => {
+                  contactNumber.value = data.contact_number || '';
+                  designation.value = data.designation || '';
+              })
+              .catch(err => {
+                  contactNumber.value = '';
+                  designation.value = '';
+                  console.error('Error fetching contact details:', err);
+              });
+      } else { 
+          contactNumber.value = '';
+          designation.value = '';
+      }
+  });
 
 });
 </script>
 
+
+
+
+
+
+
+<!-- === STYLES === -->
 <style>
-  /* === GENERAL PAGE RESET === */
   body, .main-panel, .container, .page-inner, form {
     background: none !important;
     box-shadow: none !important;
   }
-
-  /* === TITLES === */
-  h1, h2, h5 {
-    font-weight: 600;
-    color: #222;
+  h1, h2, h5 { font-weight: 600; color: #222; }
+  label { font-weight: 500; color: #333; margin-bottom: 4px; display: block; }
+  input[type="text"], input[type="number"], input[type="email"], select, textarea {
+    width: 100%; background: transparent; border: 2px solid #ccc; border-radius: 6px; padding: 10px 12px; font-size: 14px; color: #222; transition: border-color 0.2s ease;
   }
-
-  /* === FORM STYLING === */
-  label {
-    font-weight: 500;
-    color: #333;
-    margin-bottom: 4px;
-    display: block;
+  input:focus, select:focus, textarea:focus { border-color: #007bff; outline: none; }
+  button, .btn { font-weight: 500; border-radius: 6px; padding: 8px 16px; }
+  .btn-outline-primary { border: 2px solid #007bff; background: transparent; color: #007bff; }
+  .btn-outline-primary:hover { background: #007bff; color: #fff; }
+  .btn-danger, .btn-success { font-weight: 600; }
+  #map { height: 220px !important; width: 100%; border: 2px solid #aaa; border-radius: 6px; margin-bottom: 10px; }
+  .production-line-item { background: none !important; border: 2px solid #ccc; border-radius: 6px; }
+  #location-details { background: none; border: 2px dashed #999; font-size: 13px; color: #555; }
+  .text-danger { font-size: 13px; }
+  .badge { font-size: 12px; border-radius: 4px; }
+  @media (max-width: 767.98px) {
+    input[type="text"], input[type="number"], input[type="email"], select, textarea { width: 100% !important; }
+    .row > [class*="col-"] { flex: 0 0 100%; max-width: 100%; margin-bottom: 15px; }
+    .btn { width: auto !important; display: inline-block !important; padding: 6px 14px; font-size: 14px; margin-bottom: 6px; }
+    .btn-primary { background: transparent !important; color: #007bff !important; border: 2px solid #007bff !important; }
+    .btn-primary:hover { background: #007bff !important; color: #fff !important; }
+    .btn-danger { background: transparent !important; color: #dc3545 !important; border: 2px solid #dc3545 !important; }
+    .btn-danger:hover { background: #dc3545 !important; color: #fff !important; }
   }
-
-  input[type="text"],
-  input[type="number"],
-  input[type="email"],
-  select,
-  textarea {
-    width: 100%;
-    background: transparent;
-    border: 2px solid #ccc;
-    border-radius: 6px;
-    padding: 10px 12px;
-    font-size: 14px;
-    color: #222;
-    transition: border-color 0.2s ease;
-  }
-
-  input:focus,
-  select:focus,
-  textarea:focus {
-    border-color: #007bff;
-    outline: none;
-  }
-
-  /* === BUTTON STYLING === */
-  button, .btn {
-    font-weight: 500;
-    border-radius: 6px;
-    padding: 8px 16px;
-  }
-
-  .btn-outline-primary {
-    border: 2px solid #007bff;
-    background: transparent;
-    color: #007bff;
-  }
-
-  .btn-outline-primary:hover {
-    background: #007bff;
-    color: #fff;
-  }
-
-  .btn-danger, .btn-success {
-    font-weight: 600;
-  }
-
-  /* === MAP STYLING === */
-  #map {
-    height: 220px !important;
-    width: 100%;
-    border: 2px solid #aaa;
-    border-radius: 6px;
-    margin-bottom: 10px;
-  }
-
-  /* === FORMSET BOX === */
-  .production-line-item {
-    background: none !important;
-    border: 2px solid #ccc;
-    border-radius: 6px;
-  }
-
-  /* === LOCATION BOX === */
-  #location-details {
-    background: none;
-    border: 2px dashed #999;
-    font-size: 13px;
-    color: #555;
-  }
-
-  /* === ERROR TEXT === */
-  .text-danger {
-    font-size: 13px;
-  }
-
-  /* === BADGE STYLE (in list view, optional) === */
-  .badge {
-    font-size: 12px;
-    border-radius: 4px;
-  }
-
- /* === RESPONSIVE FIXES === */
-@media (max-width: 767.98px) {
-  /* Inputs full width */
-  input[type="text"],
-  input[type="number"],
-  input[type="email"],
-  select,
-  textarea {
-    width: 100% !important;
-  }
-
-  /* Stack columns */
-  .row > [class*="col-"] {
-    flex: 0 0 100%;
-    max-width: 100%;
-    margin-bottom: 15px;
-  }
-
-  /* Buttons compact, inline, auto width */
-  .btn {
-    width: auto !important;
-    display: inline-block !important;
-    padding: 6px 14px;
-    font-size: 14px;
-    margin-bottom: 6px;
-  }
-
-  /* Make danger & primary buttons outline style on mobile */
-  .btn-primary {
-    background: transparent !important;
-    color: #007bff !important;
-    border: 2px solid #007bff !important;
-  }
-  .btn-primary:hover {
-    background: #007bff !important;
-    color: #fff !important;
-  }
-
-  .btn-danger {
-    background: transparent !important;
-    color: #dc3545 !important;
-    border: 2px solid #dc3545 !important;
-  }
-  .btn-danger:hover {
-    background: #dc3545 !important;
-    color: #fff !important;
-  }
-}
-
-</style>
-<style>
   .form-label { font-weight:600; }
   .production-line-item { position: relative; }
   .remove-line { z-index: 5; }
 </style>
+
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
 {% endblock %}

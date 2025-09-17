@@ -50,10 +50,21 @@ def add_customer(request):
 from django.shortcuts import render
 from django.db.models import Q
 from .models import Customer
+from visits.models import NewVisit  # import the visit model
+
+from django.shortcuts import render
+from django.db.models import Q
+from customer.models import Customer
+from visits.models import NewVisit
+
+from django.db.models import Q
+from django.shortcuts import render
+from customer.models import Customer
+from visits.models import NewVisit
 
 def customer_list(request):
     query = request.GET.get("q", "")
-    customers = Customer.objects.prefetch_related("contacts").all()
+    customers = Customer.objects.prefetch_related("visits").all()
 
     if query:
         customers = customers.filter(
@@ -61,13 +72,18 @@ def customer_list(request):
             Q(designation__icontains=query)
         )
 
-    customers = customers.order_by('-created_at')  # 👈 order by latest created
+    for customer in customers:
+        latest_visit = customer.visits.order_by('-created_at').first()
+        customer.latest_tag = latest_visit.tag if latest_visit and latest_visit.tag else None
+
+    customers = customers.order_by('-created_at')
 
     context = {
         "customers": customers,
         "query": query,
     }
     return render(request, "users/customer_list.html", context)
+
 
 
 

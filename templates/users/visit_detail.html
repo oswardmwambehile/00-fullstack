@@ -54,21 +54,19 @@
       </div>
 
       <!-- Location -->
+      {% if visit.latitude and visit.longitude %}
       <div class="mb-4">
         <h5><i class="fas fa-map-marker-alt me-1 text-danger"></i> Location</h5>
-        {% if visit.latitude and visit.longitude %}
-          <p>{{ visit.place_name }} <br>
-             <small>{{ visit.region }} {{ visit.zone }} {{ visit.nation }}</small></p>
-          <a href="https://www.google.com/maps/search/?api=1&query={{ visit.latitude }},{{ visit.longitude }}" 
-             target="_blank" class="btn btn-sm btn-primary">
-            <i class="fas fa-map-location-dot me-1"></i> View on Map
-          </a>
-        {% else %}
-          <p class="text-muted">Location Not Available</p>
-        {% endif %}
+        <p>{{ visit.place_name }} <br>
+           <small>{{ visit.region }} {{ visit.zone }} {{ visit.nation }}</small></p>
+        <a href="https://www.google.com/maps/search/?api=1&query={{ visit.latitude }},{{ visit.longitude }}" 
+           target="_blank" class="btn btn-sm btn-primary">
+          <i class="fas fa-map-location-dot me-1"></i> View on Map
+        </a>
       </div>
+      {% endif %}
 
-      <!-- Products Interested Table -->
+    <!-- Products Interested Table -->
       <div class="mb-4">
         <h5><i class="fas fa-industry me-1 text-info"></i> Products Interested</h5>
         {% if products_interested %}
@@ -112,31 +110,45 @@
         {% endif %}
       </div>
 
+
       <!-- Client Budget & Discussion -->
+      {% if visit.client_budget or visit.item_discussed %}
       <div class="mb-4">
         <h5><i class="fas fa-money-bill-wave me-1 text-success"></i> Client Budget & Discussion</h5>
-        <p><strong>Budget:</strong> {{ visit.client_budget|default:"0"|floatformat:2|intcomma }}</p>
-        <p><strong>Item Discussed:</strong> {{ visit.item_discussed }}</p>
+        {% if visit.client_budget %}<p><strong>Client Budget:</strong> {{ visit.client_budget|floatformat:2|intcomma }}</p>{% endif %}
+        {% if visit.item_discussed %}<p><strong>Item Discussed:</strong> {{ visit.item_discussed }}</p>{% endif %}
       </div>
+      {% endif %}
 
       <!-- Contract Info -->
+      {% if visit.contract_outcome or visit.contract_amount or visit.reason_lost or visit.is_payment_collected %}
       <div class="mb-4">
         <h5><i class="fas fa-file-contract me-1 text-primary"></i> Contract Info</h5>
-        <p><strong>Outcome:</strong> {{ visit.contract_outcome|default:"-" }}</p>
-        <p><strong>Contract Amount:</strong> {{ visit.contract_amount|default:"0"|floatformat:2|intcomma }}</p>
-        <p><strong>Reason Lost:</strong> {{ visit.reason_lost|default:"-" }}</p>
-        <p><strong>Overall Payment Collected:</strong> 
-          {% if visit.is_payment_collected %}
-            <span class="badge bg-success">Yes</span>
-          {% else %}
-            <span class="badge bg-secondary">No</span>
-          {% endif %}
-        </p>
+        {% if visit.contract_outcome %}
+<p>
+  <strong>Contract Outcome:</strong> 
+  <span class="badge 
+    {% if visit.contract_outcome == 'Won' %}bg-success
+    {% elif visit.contract_outcome == 'Lost' %}bg-danger
+    {% elif visit.contract_outcome == 'Pending' %}bg-warning text-dark
+    {% else %}bg-secondary text-dark{% endif %}">
+    {{ visit.contract_outcome }}
+  </span>
+</p>
+{% endif %}
+        {% if visit.contract_amount %}<p><strong>Contract Amount:</strong> {{ visit.contract_amount|floatformat:2|intcomma }}</p>{% endif %}
+        {% if visit.reason_lost %}<p><strong>Reason Lost:</strong> {{ visit.reason_lost }}</p>{% endif %}
+        
       </div>
+      {% endif %}
 
       <a href="{% url 'all_visit_list' %}" class="btn btn-secondary mb-4">
         <i class="fas fa-arrow-left me-1"></i> Back to Visits
       </a>
+      <a href="{% url 'visit_history' visit.id %}" class="btn btn-info mb-4">
+    <i class="fas fa-history me-1"></i> View Visit History
+</a>
+
     </div>
   </div>
 </div>
@@ -144,15 +156,8 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
 <style>
-  
-  .badge {
-    font-size: 0.9rem;
-    padding: 0.4em 0.6em;
-    border-radius: 0.35rem;
-  }
-  table th, table td {
-    vertical-align: middle !important;
-  }
+  .badge { font-size: 0.9rem; padding: 0.4em 0.6em; border-radius: 0.35rem; }
+  table th, table td { vertical-align: middle !important; }
   @media (max-width: 768px) {
     h5 { font-size: 1rem; }
     table th, table td { font-size: 0.85rem; }
